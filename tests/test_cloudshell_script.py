@@ -244,3 +244,30 @@ def test_the_decoded_paste_has_unix_line_endings(paste):
 
     assert b"\r\n" not in decoded, "the paste would write a CRLF script"
     assert decoded.startswith(b"#!/usr/bin/env bash\n")
+
+
+def test_the_runner_exercises_the_guardrail(script):
+    """The guardrail is a stand-out item; building it without running it
+    proves nothing."""
+    assert "setup_guardrail.py" in script
+    assert "guardrail.screen" in script
+
+
+def test_the_guardrail_step_is_not_fatal(script):
+    """It is an extra, so a failure there must not abort a run that is
+    otherwise producing submission evidence."""
+    assert "python setup_guardrail.py || GUARDRAIL_OK=0" in script
+
+
+def test_the_runner_bundles_evidence(script):
+    """Everything the rubric asks for, in one downloadable file."""
+    assert "evidence.tar.gz" in script
+    for artefact in ("rendered_system_prompt.txt", "dynamodb_bug_reports.json",
+                     "run_summary.txt", "output_eval_dataset.jsonl"):
+        assert artefact in script, f"{artefact} is not bundled"
+
+
+def test_the_rendered_prompt_is_captured(script):
+    """The AgentCore stand-in for the rubric's 'FAQ Prompt node template
+    showing embedded FAQ content' - the prompt with {{FAQ}} substituted."""
+    assert 'replace("{{FAQ}}", faq)' in script

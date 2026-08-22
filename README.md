@@ -49,6 +49,8 @@ mattered most was replacing a negative constraint ("do not call the tool
 before you have all three") with one that has a checkable trigger: *your first
 reply to a bug report is always a question, never a tool call.*
 
+**Grading each rubric line against the evidence:** [`SUBMISSION.md`](SUBMISSION.md).
+
 ---
 
 ## Run the whole thing on AWS in one command

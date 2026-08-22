@@ -19,35 +19,43 @@ not in condition nodes or a separate classifier.
 
 | | |
 |---|---|
-| Offline test suite | **115 tests, all passing** — `python -m pytest` |
-| System prompt | Written, hardened against injection, **revised after run 1** |
-| Test suite for evaluation | 21 cases across all three routes + edge cases |
-| AWS deployment | **Done** — deployed and verified end to end in `us-east-1` |
-| Bedrock Evaluations | **Run 1 complete** — 21/21 records, 0 harness errors |
-| Current state | Run 1 found three real defects; all fixed, **awaiting re-run** |
+| Offline test suite | **130 tests, all passing** — `python -m pytest` |
+| AWS deployment | ✅ deployed and verified end to end in `us-east-1` |
+| Bug-report route | ✅ **`ALL 8 CHECKS PASSED`** (run 4) |
+| FAQ + hand-off routes | ✅ 4 of 5 spot checks — price-match hand-off still flaky |
+| **Bedrock Evaluations** | ✅ **mean correctness 0.952** over 21 records (20× 1.0, 1× 0.0) |
+| Guardrail | Blocks injection and prompt extraction; one length fix pending |
+| Evidence | [`evidence/run-01/`](evidence/run-01/) — needs screenshots |
 
-### What run 1 found
+### The run that mattered
 
-The offline suite was green and the model still got the most important
-behaviour wrong — which is exactly the split between "the wiring is correct"
-and "the model behaves". Full write-up in
-[`docs/EVALUATION.md`](docs/EVALUATION.md).
+Run 4 was the first clean measurement. Earlier runs averaged several jobs
+together, because Bedrock wrote every job into one shared S3 prefix.
 
-1. **The bug-report route failed.** Nova called `create_bug_report` on turn 1
-   with only a description, **fabricating** the steps and environment to
-   satisfy the required fields — then filed a *second*, duplicate ticket on
-   turn 2, describing it as an "update". Three bug reports produced 11
-   DynamoDB rows.
-2. **`<thinking>` tags leaked** into customer-facing replies, and therefore
-   into the evaluation dataset the judge scores.
-3. **OTHER wasn't read as the catch-all.** Asked for a brownie recipe, Nova
-   decided the message fitted "none of the categories" and skipped the
-   hand-off entirely.
+```
+you> Your checkout page crashes every single time I click the Pay button.
+bot> Could you please describe the exact steps you take that lead to the crash?
 
-All three are fixed in the prompt, each with a regression test. The fix that
-mattered most was replacing a negative constraint ("do not call the tool
-before you have all three") with one that has a checkable trigger: *your first
-reply to a bug report is always a question, never a tool call.*
+you> I add a pair of headphones to the cart, go to checkout... page goes white.
+bot> Thanks for the details. On which device and browser does this happen?
+
+you> I'm using Chrome 120 on macOS Sonoma, on a MacBook Air.
+bot> [tool call] bugreports___create_bug_report
+     I have filed a bug report with ID 34d2a56a-...
+```
+
+One question per turn, all three fields collected from the customer, exactly
+one tool call, the real ticket ID relayed, and the DynamoDB item matching what
+was said. That rubric row had failed in every previous run.
+
+Getting there took four live runs and surfaced six real defects: a premature
+tool call with fabricated fields, duplicate tickets, leaked `<thinking>` tags,
+a hand-off that dropped the phone number, a guardrail that blocked genuine
+customers, and a score silently averaged across every previous run. Each is
+written up in [`docs/EVALUATION.md`](docs/EVALUATION.md) — what it was, why it
+happened, and the fix.
+
+---
 
 **Grading each rubric line against the evidence:** [`SUBMISSION.md`](SUBMISSION.md).
 
@@ -117,7 +125,7 @@ pip install -r requirements.txt -r requirements-dev.txt
 
 cp .env.example .env              # then fill in your AWS keys
 
-python -m pytest                  # 115 offline tests, no AWS needed
+python -m pytest                  # 130 offline tests, no AWS needed
 ```
 
 Loading `.env` into your shell:

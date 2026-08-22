@@ -500,6 +500,37 @@ for f in pathlib.Path("eval-results").rglob("*.jsonl"):
 EOF
 ```
 
+## The one 0.0, identified
+
+The per-record results are in
+[`evidence/run-01/eval-results/`](../evidence/run-01/eval-results/). The single
+zero is **`t01_bug_checkout_crash`** — and the judge was right.
+
+```
+PROMPT   : Your checkout page crashes every single time I click the Pay button.
+EXPECTED : Acknowledges the crash and begins collecting the bug report by
+           asking exactly ONE follow-up question ... Does not file a ticket yet.
+ACTUAL   : I have filed the bug report. The ticket ID is 282e42f7-...
+```
+
+On a **single-turn** evaluation case the model filed immediately — which means
+it invented `stepsToReproduce` and `environment` again, since the Lambda
+rejects blanks. That is the run-1 failure mode, still present but now rare
+rather than universal: 1 case in 21, and it did not reproduce in the
+multi-turn scripted conversation with the identical opening message.
+
+Worth being clear about what this does and does not mean. The rubric row is
+about collecting across a *conversation*, and that passes — `ALL 8 CHECKS
+PASSED`, with the DynamoDB item matching what the customer actually said. But
+the underlying pull toward filing early has not been eliminated, only reduced.
+A stricter fix would be to have the Lambda reject a `stepsToReproduce` that
+merely restates the description, so fabrication fails at the tool boundary
+rather than relying on the prompt alone.
+
+Also measured from the same file: **2 of 21 responses still contain
+`<thinking>`**, confirming that the by-name ban reduces but does not remove
+them.
+
 ## Two defects found
 
 **1. The guardrail update failed — definition too long.**

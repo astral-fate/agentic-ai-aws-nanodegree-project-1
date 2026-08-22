@@ -32,6 +32,36 @@ quality. See [What the tests do and do not prove](#what-the-tests-do-and-do-not-
 
 ---
 
+## Run the whole thing on AWS in one command
+
+Open **AWS CloudShell** in **us-east-1** and paste the single line from
+[`cloudshell/PASTE-THIS.txt`](cloudshell/PASTE-THIS.txt).
+
+That one line reconstructs the full runner from an embedded gzip payload and
+executes it — no clone, no upload, no credentials to configure (CloudShell
+already has them). It will:
+
+1. Check Nova Pro access up front, so a missing model grant fails in seconds
+   rather than five minutes into CloudFormation
+2. Fetch the Udacity starter files and write the deliverables
+3. Deploy the tool stack, then smoke-test the Lambda both ways — a valid
+   ticket, and a blank-field payload that must be *rejected*
+4. Create the gateway and the harness
+5. Drive a **live three-turn bug report** and verify the stored DynamoDB item
+   field-by-field against what the scripted customer actually said
+6. Spot-check the FAQ, hand-off and injection routes
+7. Deploy the testing stack, generate the 21-case dataset, and run a Bedrock
+   Evaluations job, printing the mean correctness score
+8. Print exactly which files to download and which screenshots to take
+
+It is **resumable** — re-paste it if a CloudShell session drops and finished
+steps are skipped. It **never deletes working resources**; teardown commands
+are printed at the end for you to run once you have your evidence.
+
+Prefer to read it first? [`cloudshell/run-all.sh`](cloudshell/run-all.sh) is
+the same script, uncompressed — upload it with **Actions → Upload file** and
+run `bash run-all.sh`. Details in [`cloudshell/README.md`](cloudshell/README.md).
+
 ## Before you can deploy
 
 Two things are missing on this machine, and neither is something the project

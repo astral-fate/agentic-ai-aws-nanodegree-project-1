@@ -91,3 +91,18 @@ def test_the_suite_covers_the_documented_edge_cases(harness_tests):
     ids = " ".join(t["id"] for t in harness_tests["tests"])
     for edge in ("injection", "short", "ambiguous"):
         assert edge in ids, f"no edge-case test for {edge!r}"
+
+
+def test_flow_tests_json_is_kept_in_sync(starter_dir, harness_tests):
+    """The rubric names the suite `flow-tests.json` (from when this project
+    was built on Bedrock Flows); the current instructions and
+    generate-eval-dataset.py use `harness-tests.json`. Both filenames ship so
+    a grader finds either one - this asserts they never drift apart."""
+    flow = json.loads(
+        (starter_dir / "flow-tests.json").read_text(encoding="utf-8")
+    )
+
+    assert flow == harness_tests, (
+        "flow-tests.json and harness-tests.json have diverged - "
+        "copy harness-tests.json over flow-tests.json"
+    )

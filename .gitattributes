@@ -1,0 +1,14 @@
+# Shell scripts and the CloudShell paste MUST stay LF. A CRLF checkout makes
+# bash fail with "$'\r': command not found", and would corrupt the base64
+# payload in PASTE-THIS.txt.
+*.sh              text eol=lf
+PASTE-THIS.txt    text eol=lf
+Makefile          text eol=lf
+
+# Everything the Lambda / harness reads should also be LF.
+*.py              text eol=lf
+*.yaml            text eol=lf
+*.yml             text eol=lf
+*.json            text eol=lf
+*.txt             text eol=lf
+*.md              text eol=lf

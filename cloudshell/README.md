@@ -61,3 +61,40 @@ The test suite also asserts that the `system_prompt.txt` and
 `harness-tests.json` inlined in the script are byte-identical to the ones
 in `project/starter/`, so the CloudShell run can never deploy a stale
 prompt.
+
+
+---
+
+# create-evidence-user.sh — IAM user for the screenshots
+
+The screenshot automation signs in to the console with
+`sts:GetFederationToken`. **Root credentials cannot call it** — that is an AWS
+restriction, not a preference — so a small IAM user is needed.
+
+Paste [`PASTE-CREATE-USER.txt`](PASTE-CREATE-USER.txt) into CloudShell, or
+upload `create-evidence-user.sh` and run `bash create-evidence-user.sh`.
+
+It creates a **read-only** user (`evidence-capture`) with `ReadOnlyAccess`
+plus an explicit `sts:GetFederationToken` grant, makes an access key, mints a
+one-click console sign-in URL, and prints the exact PowerShell command to run
+on your own machine:
+
+```powershell
+$env:AWS_ACCESS_KEY_ID     = "AKIA..."
+$env:AWS_SECRET_ACCESS_KEY = "..."
+.\scripts\capture-evidence.ps1 -Federated
+```
+
+CloudShell has no browser, so it cannot take the screenshots itself. It
+prepares the credentials; the capture runs locally.
+
+Options:
+
+```bash
+bash create-evidence-user.sh --console   # also set a console password, so you
+                                         # can stop signing in as root
+bash create-evidence-user.sh --delete    # remove the user, keys and password
+```
+
+The user can read the console and change nothing. Delete it when you are
+done, and wipe the printed secret with `clear && history -c`.

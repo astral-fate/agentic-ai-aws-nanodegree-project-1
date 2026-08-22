@@ -333,3 +333,70 @@ def test_memory_is_scoped_before_any_test_runs(script):
 
     assert disable < bug_report, "memory must be scoped before the bug report"
     assert disable < dataset, "memory must be scoped before the eval dataset"
+
+
+# --- the IAM user bootstrap ------------------------------------------------
+
+
+PASTES = [
+    ("cloudshell/PASTE-THIS.txt", "cloudshell/run-all.sh"),
+    ("cloudshell/PASTE-CREATE-USER.txt", "cloudshell/create-evidence-user.sh"),
+]
+
+
+@pytest.mark.parametrize("paste_rel,script_rel", PASTES)
+def test_each_paste_decodes_to_its_script(request, paste_rel, script_rel):
+    paste = (request.config.rootpath / paste_rel).read_text(encoding="utf-8")
+    script = (request.config.rootpath / script_rel).read_bytes()
+
+    decoded = _payload(paste)
+
+    assert decoded == script, (
+        f"{paste_rel} is stale - run cloudshell/regenerate-paste.sh"
+    )
+    assert b"\r\n" not in decoded, f"{paste_rel} would write a CRLF script"
+
+
+@pytest.mark.parametrize("paste_rel,script_rel", PASTES)
+def test_each_paste_verifies_its_own_checksum(request, paste_rel, script_rel):
+    import hashlib
+
+    paste = (request.config.rootpath / paste_rel).read_text(encoding="utf-8")
+    script = (request.config.rootpath / script_rel).read_bytes()
+
+    assert hashlib.sha256(script).hexdigest() in paste
+    assert "PASTE INCOMPLETE OR CORRUPTED" in paste
+
+
+def test_the_user_script_grants_federation_explicitly(request):
+    """ReadOnlyAccess does not cover sts:GetFederationToken - it is not a read
+    action - so without an explicit grant the console URL cannot be minted."""
+    src = (request.config.rootpath / "cloudshell" / "create-evidence-user.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert "sts:GetFederationToken" in src
+    assert "arn:aws:iam::aws:policy/ReadOnlyAccess" in src
+
+
+def test_the_user_script_is_read_only(request):
+    """The whole point is a credential that can look at the console and
+    nothing else. It must not attach an admin policy."""
+    src = (request.config.rootpath / "cloudshell" / "create-evidence-user.sh").read_text(
+        encoding="utf-8"
+    )
+
+    for dangerous in ("AdministratorAccess", "PowerUserAccess", "IAMFullAccess"):
+        assert dangerous not in src, f"{dangerous} must not be attached"
+
+
+def test_the_user_script_can_clean_up_after_itself(request):
+    """Leaving a long-lived access key behind is the failure mode here."""
+    src = (request.config.rootpath / "cloudshell" / "create-evidence-user.sh").read_text(
+        encoding="utf-8"
+    )
+
+    assert "--delete" in src
+    assert "delete-access-key" in src
+    assert "delete-user" in src
+    assert "history -c" in src, "should tell the user to wipe the printed secret"

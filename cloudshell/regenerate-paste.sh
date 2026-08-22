@@ -29,22 +29,30 @@ fi
 # so the CloudShell run can never deploy a stale prompt.
 python3 sync-inline.py
 
-HASH="$(sha256sum run-all.sh | cut -d' ' -f1)"
+make_paste() {           # make_paste <script> <paste-file>
+  local script="$1" out="$2"
+  if grep -q $'' "$script"; then
+    tr -d '' < "$script" > "$script.tmp" && mv "$script.tmp" "$script"
+  fi
+  local hash
+  hash="$(sha256sum "$script" | cut -d' ' -f1)"
+  {
+    echo "cat > /tmp/ra.b64 <<'B64_EOF'"
+    gzip -9c "$script" | base64 -w 76
+    echo "B64_EOF"
+    echo "base64 -d /tmp/ra.b64 2>/dev/null | gunzip > $script 2>/dev/null; \\"
+    echo "if [ \"\$(sha256sum $script 2>/dev/null | cut -d' ' -f1)\" = \"$hash\" ]; then \\"
+    echo "  echo 'integrity OK'; bash $script; \\"
+    echo "else \\"
+    echo "  echo 'PASTE INCOMPLETE OR CORRUPTED.'; \\"
+    echo "  echo 'Use CloudShell Actions > Upload file to upload $script instead,'; \\"
+    echo "  echo 'then run:  bash $script'; \\"
+    echo "fi"
+  } > "$out"
+  echo "  $out  ($(wc -c < "$out") bytes, $(wc -l < "$out") lines)"
+  echo "    sha256 $hash"
+}
 
-{
-  echo "cat > /tmp/ra.b64 <<'B64_EOF'"
-  gzip -9c run-all.sh | base64 -w 76
-  echo "B64_EOF"
-  echo "base64 -d /tmp/ra.b64 2>/dev/null | gunzip > run-all.sh 2>/dev/null; \\"
-  echo "if [ \"\$(sha256sum run-all.sh 2>/dev/null | cut -d' ' -f1)\" = \"$HASH\" ]; then \\"
-  echo "  echo 'integrity OK'; bash run-all.sh; \\"
-  echo "else \\"
-  echo "  echo 'PASTE INCOMPLETE OR CORRUPTED.'; \\"
-  echo "  echo 'Use CloudShell Actions > Upload file to upload run-all.sh instead,'; \\"
-  echo "  echo 'then run:  bash run-all.sh'; \\"
-  echo "fi"
-} > PASTE-THIS.txt
-
-echo "PASTE-THIS.txt regenerated"
-echo "  $(wc -c < PASTE-THIS.txt) bytes, $(wc -l < PASTE-THIS.txt) lines"
-echo "  sha256 $HASH"
+echo "Regenerated:"
+make_paste run-all.sh            PASTE-THIS.txt
+make_paste create-evidence-user.sh PASTE-CREATE-USER.txt

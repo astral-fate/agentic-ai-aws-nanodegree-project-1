@@ -335,25 +335,108 @@ rejected rather than filed.
 
 ---
 
-# Run 3 — pending
+# Run 3
 
-Checklist:
+| | |
+|---|---|
+| Job | `support-chatbot-eval-1787436548` · `evaluation-job/tcvrqfmz97qm` |
+| Status | Completed · 13m 1s |
+| Records | 21 written, 21 succeeded, 0 `[HARNESS_ERROR]` |
+| Reported correctness | mean 0.825 — **but see the caveat below** |
 
-- [ ] Step 08 → `ALL 8 CHECKS PASSED`, one tool call on turn 3
-- [ ] Step 09 → price-match and brownie both return `1-800-555-0199`
-- [ ] Step 11 → guardrail creates and blocks 2 of 3 probes
-- [ ] Step 13 → mean correctness, now on isolated sessions
-- [ ] Confirm exactly one new ticket per bug conversation
+### Fixed in this run
 
-Runs 1 and 2 were both measured with cross-session memory on, so run 3 is the
-first clean measurement.
+- **All five route spot checks passed**, including the two that had been
+  failing. Price matching and the brownie recipe both returned
+  `1-800-555-0199`. Making the closing sentence a verbatim required template
+  rather than a description of one is what did it.
+- **The guardrail ran** and blocked both the injection (`PROMPT_ATTACK` +
+  `RefundAuthorization`) and the prompt-extraction attempt
+  (`SystemInstructionDisclosure`).
+
+### Three defects found
+
+**1. `disable_memory.py` failed — wrong shape.**
+
+```
+ParamValidationError: Unknown parameter in memory: "disabled",
+must be one of: optionalValue
+```
+
+`CreateHarness` takes `HarnessMemoryConfiguration` directly; `UpdateHarness`
+takes `UpdatedHarnessMemoryConfiguration`, which wraps it in `optionalValue`
+so the field can be cleared as well as set. The code used the create shape.
+Correct call:
+
+```python
+acc.update_harness(harnessId=..., memory={"optionalValue": {"disabled": {}}})
+```
+
+So memory stayed on, and the bug-report route failed the same way as run 2 —
+recalling ticket `a09a2c6f` from an earlier session and declining to file a
+new one. Interestingly it also quoted a *second* ticket
+(`7866fea7`) on turn 2, so recall is not even stable within a conversation.
+
+**2. The guardrail blocked an ordinary FAQ question.**
+
+```
+[CHECK] BLOCKED — ordinary FAQ question
+                  denied topic: RefundAuthorization
+```
+
+*"How long do I have to return something?"* — a core FAQ question, the exact
+case `t07` tests — was refused. A guardrail that blocks real customers is
+worse than no guardrail: it breaks the main route to protect against an
+attack the `PROMPT_ATTACK` filter already caught on its own.
+
+The topic definition said only "requests for the assistant to approve a
+refund", and the topic model generalised from "refund" to anything
+refund-adjacent. It now states the exclusion explicitly — asking how returns
+work, how long the window is, or when a refund arrives is normal support and
+must be allowed. The run also flags a false positive loudly instead of as a
+quiet `[CHECK]`.
+
+**3. The reported correctness score was wrong — across all three runs.**
+
+The scores looked like they were improving:
+
+| Run | Reported mean | Entries |
+|---|---|---|
+| 1 | not parsed | — |
+| 2 | 0.798 | 42 |
+| 3 | 0.825 | 63 |
+
+42 and 63 for a **21-case** suite. Bedrock was writing every job into the same
+`results/` prefix, and the parser read the whole prefix — so run 2 averaged
+runs 1–2, and run 3 averaged runs 1–3. The trend was an artefact of mixing
+old runs into new ones.
+
+Each job now writes to `results/<job-name>/`, `run_evaluation.py` records the
+URI in `eval_job.json`, and the run downloads only that prefix. **No score
+measured so far is trustworthy.** Run 4 is the first clean number.
+
+### Still open
+
+`<thinking>` tags continue to appear despite a by-name ban, now across three
+runs. This is Nova Pro behaviour that prompt text does not suppress. It
+inflates what the judge scores and plausibly explains part of the 0.5 band.
+
+---
+
+# Run 4 — pending
+
+- [ ] Step 08 → memory actually disabled (`Memory setting is now: disabled`)
+- [ ] Step 09 → `ALL 8 CHECKS PASSED`, one tool call on turn 3
+- [ ] Step 11 → guardrail allows the FAQ question, blocks both attacks
+- [ ] Step 14 → correctness over exactly 21 entries
+- [ ] Exactly one new ticket per bug conversation
 
 ## Evidence to capture
 
 - [x] `bug_report_transcript.txt`
 - [x] `output_eval_dataset.jsonl` — 21 records
 - [x] `harness-tests.json` / `flow-tests.json`
-- [x] `evidence.tar.gz` bundling all of it
+- [x] `evidence.tar.gz`
 - [ ] Bedrock console → Evaluations → job results page
-- [ ] DynamoDB console → `bug-report-tool-stack-bug-reports` → Explore items
+- [ ] DynamoDB console → `bug-report-tool-stack-bug-reports`
 - [ ] Lambda console → test result

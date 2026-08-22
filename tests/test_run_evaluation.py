@@ -135,3 +135,27 @@ def test_the_real_generated_dataset_passes_validation(
     eval_module.main()
 
     assert run_eval.check_dataset(out, MODEL_ID) == len(harness_tests["tests"])
+
+
+def test_results_go_to_a_per_job_prefix(run_eval):
+    """Run 3: a shared results/ prefix accumulated every run, so reading it
+    back averaged run 3 together with runs 1 and 2 - the reported mean was
+    across 63 entries for a 21-case suite."""
+    import inspect
+
+    source = inspect.getsource(run_eval)
+
+    assert 's3://{bucket}/results/{job_name}/' in source
+    assert 's3://{bucket}/results/"' not in source
+
+
+def test_the_job_details_are_recorded_for_the_caller(run_eval):
+    """run-all.sh reads resultsUri from eval_job.json to fetch only this
+    job's scores."""
+    import inspect
+
+    source = inspect.getsource(run_eval)
+
+    assert "eval_job.json" in source
+    for key in ("resultsUri", "resultsPrefix", "jobArn", "jobName"):
+        assert f'"{key}"' in source

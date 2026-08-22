@@ -149,3 +149,62 @@ def test_the_setup_script_denies_the_topics_injections_aim_for(starter_dir):
     assert "RefundAuthorization" in source
     assert "SystemInstructionDisclosure" in source
     assert source.count('"type": "DENY"') >= 2
+
+
+# --- fixes from run 3 ------------------------------------------------------
+
+
+def _denied_topics(starter_dir) -> list[dict]:
+    """The DENIED_TOPICS literal, evaluated.
+
+    Checking raw source text does not work here: the definitions are built
+    from adjacent string literals, so a phrase like "when a refund arrives"
+    is split across two lines in the file.
+    """
+    import ast
+
+    tree = ast.parse((starter_dir / "setup_guardrail.py").read_text(encoding="utf-8"))
+    node = next(
+        n.value for n in ast.walk(tree)
+        if isinstance(n, ast.Assign)
+        and any(getattr(t, "id", "") == "DENIED_TOPICS" for t in n.targets)
+    )
+    return ast.literal_eval(node)
+
+
+def test_the_refund_topic_does_not_catch_policy_questions(starter_dir):
+    """Run 3: the guardrail blocked "How long do I have to return
+    something?" on the RefundAuthorization topic. A guardrail that refuses
+    ordinary customers is worse than no guardrail, so the definition now
+    states the exclusion explicitly."""
+    refund = next(t for t in _denied_topics(starter_dir)
+                  if t["name"] == "RefundAuthorization")
+    definition = refund["definition"]
+
+    assert "does NOT cover ordinary questions about policy" in definition
+    for allowed in ("how returns work", "how long the return window is",
+                    "when a refund arrives", "who pays return shipping"):
+        assert allowed in definition, (
+            f"the exclusion does not mention {allowed!r}"
+        )
+
+
+def test_the_denied_topics_are_well_formed(starter_dir):
+    """name/definition/type are required by CreateGuardrail; a duplicate key
+    in the literal would silently drop one of them."""
+    import ast
+
+    source = (starter_dir / "setup_guardrail.py").read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    topics = next(
+        node.value for node in ast.walk(tree)
+        if isinstance(node, ast.Assign)
+        and any(getattr(t, "id", "") == "DENIED_TOPICS" for t in node.targets)
+    )
+
+    assert isinstance(topics, ast.List) and len(topics.elts) >= 2
+    for entry in topics.elts:
+        keys = [k.value for k in entry.keys]
+        assert len(keys) == len(set(keys)), f"duplicate key in {keys}"
+        for required in ("name", "definition", "type"):
+            assert required in keys, f"{required} missing from a denied topic"

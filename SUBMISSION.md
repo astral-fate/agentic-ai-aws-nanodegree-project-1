@@ -97,8 +97,8 @@ Every rubric line, where it is satisfied, and what proves it.
 | Requirement | Status | Where |
 |---|---|---|
 | Relevant answer when the FAQ covers the question | ✅ | Run 1: *"How long do I have to return something?"* → 30 days, unused, original packaging, defective exception |
-| Directs to the support phone number when the FAQ does not cover it | ⏳ | Passed in run 1, **regressed in run 2** — the reply declined politely but omitted the number. The closing sentence is now a verbatim mandatory template |
-| A separate path for other requests, directing to the phone number | ⏳ | Failed in runs 1 and 2. Framing OTHER as the default fixed the *classification*; the model then improvised the *wording*. Now a verbatim required sentence; run 3 confirms |
+| Directs to the support phone number when the FAQ does not cover it | ✅ | Run 3: price-match question returned `1-800-555-0199` after the closing sentence was made a verbatim required template |
+| A separate path for other requests, directing to the phone number | ✅ | Run 3: the off-topic case returned `1-800-555-0199`. All five route spot checks passed |
 
 **Evidence**
 
@@ -121,7 +121,7 @@ Every rubric line, where it is satisfied, and what proves it.
 | `flow-tests.json` has ≥1 test per path | ✅ | [`flow-tests.json`](project/starter/flow-tests.json) — 21 cases: 6 bug, 9 platform, 6 hand-off. Also shipped as `harness-tests.json`, the name the current instructions use; a test asserts the two never diverge |
 | `generate-eval-dataset.py` produces a JSONL file | ✅ | Runs 1 and 2: 21 records each, all succeeded, **0 `[HARNESS_ERROR]`** |
 | JSONL uploaded to S3 and an evaluation job created | ✅ | Job `support-chatbot-eval-1787431707`, status **Completed**, bucket `udacity-agentic-engineer-c1-eval-212626318772` |
-| Correctness score close to 1 | ⏳ | Run 2: **mean 0.798** (30x 1.0, 7x 0.5, 5x 0.0). Not close enough yet. Both runs were measured with cross-session memory on, which contaminated them; run 3 is the first clean measurement |
+| Correctness score close to 1 | ⏳ | **No trustworthy number yet.** Runs 2 and 3 reported 0.798 and 0.825, but both averaged across a shared S3 results prefix containing earlier runs (42 and 63 entries for a 21-case suite). Each job now writes to its own prefix; run 4 is the first clean measurement |
 
 **Evidence**
 
@@ -137,7 +137,7 @@ Every rubric line, where it is satisfied, and what proves it.
 
 | Suggestion | Status | Where |
 |---|---|---|
-| **Guardrail blocking harmful content and prompt injection before any model processes the message** | ✅ | [`setup_guardrail.py`](project/starter/setup_guardrail.py), [`guardrail.py`](project/starter/guardrail.py), [`chat_guarded.py`](project/starter/chat_guarded.py). Exercised by run step **11** |
+| **Guardrail blocking harmful content and prompt injection before any model processes the message** | ✅ | [`setup_guardrail.py`](project/starter/setup_guardrail.py), [`guardrail.py`](project/starter/guardrail.py), [`chat_guarded.py`](project/starter/chat_guarded.py). Exercised by run step **11**; run 3 blocked both the injection and the prompt-extraction attempt |
 | **Edge-case prompts: ambiguous, very short, injection** | ✅ | `t03` two-word *"site broken"*; `t18`/`t21` designed near misses; `t19`/`t20` injection |
 | **Replace the embedded FAQ with a Bedrock Knowledge Base** | ❌ | Not done — the course notes place RAG with Knowledge Bases outside its scope |
 | **Structured output so the classifier only produces valid values** | ➖ | No classifier node exists in AgentCore. The nearest equivalent is enforced: the tool's JSON Schema constrains the tool call, and the Lambda rejects blank required fields |

@@ -153,13 +153,38 @@ def main():
                 }
             ]
         },
-        outputDataConfig={"s3Uri": f"s3://{bucket}/results/"},
+        # One prefix per job. A shared results/ prefix accumulates every run
+        # ever made, so anything reading it back averages the current run
+        # together with all its predecessors - which silently misreported the
+        # correctness score across three runs before it was caught.
+        outputDataConfig={"s3Uri": f"s3://{bucket}/results/{job_name}/"},
     )
 
     job_arn = response["jobArn"]
+    results_uri = f"s3://{bucket}/results/{job_name}/"
     print(f"\nJob created.\n  arn:     {job_arn}")
-    print(f"  results: s3://{bucket}/results/")
+    print(f"  results: {results_uri}")
     print("  console: Amazon Bedrock -> Evaluations")
+
+    # Recorded so the caller can fetch exactly this job's results rather than
+    # everything ever written under results/.
+    Path("eval_job.json").write_text(
+        json.dumps(
+            {
+                "jobArn": job_arn,
+                "jobName": job_name,
+                "bucket": bucket,
+                "resultsUri": results_uri,
+                "resultsPrefix": f"results/{job_name}/",
+                "evaluatorModel": args.evaluator_model,
+                "metrics": metrics,
+                "records": n_records,
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
     if not args.wait:
         print("\nRe-run with --wait to poll until it finishes.")
@@ -177,7 +202,7 @@ def main():
         time.sleep(30)
 
     print(f"\nDone. Download the scores with:\n"
-          f"  aws s3 cp s3://{bucket}/results/ . --recursive --region {args.region}")
+          f"  aws s3 cp {results_uri} . --recursive --region {args.region}")
 
 
 if __name__ == "__main__":

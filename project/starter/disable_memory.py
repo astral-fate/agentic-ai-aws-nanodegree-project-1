@@ -100,7 +100,12 @@ def main():
         return
 
     print(f"Setting memory to: {wanted}")
-    acc.update_harness(harnessId=harness_id, memory=memory)
+    # UpdateHarness takes UpdatedHarnessMemoryConfiguration, which wraps the
+    # value in `optionalValue` so the field can be cleared as well as set.
+    # CreateHarness takes the inner shape directly - passing the CreateHarness
+    # form here fails with:
+    #   Unknown parameter in memory: "disabled", must be one of: optionalValue
+    acc.update_harness(harnessId=harness_id, memory={"optionalValue": memory})
     wait_ready(acc, harness_id)
 
     after = acc.get_harness(harnessId=harness_id)["harness"].get("memory")

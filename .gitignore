@@ -1,0 +1,29 @@
+# ---- secrets: never commit ----
+.env
+.env.*
+!.env.example
+*.pem
+credentials
+aws_credentials
+
+# ---- generated at deploy/run time ----
+agentcore_config.json
+output_eval_dataset.jsonl
+eval_job.json
+*.local.json
+
+# ---- python ----
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# ---- os / editor ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

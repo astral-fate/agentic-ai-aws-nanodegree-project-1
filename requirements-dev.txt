@@ -1,0 +1,4 @@
+# Offline test suite only. The runtime dependencies are in requirements.txt
+# (and project/starter/requirements.txt, which is the version the course pins).
+pytest>=8.0
+PyYAML>=6.0

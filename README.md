@@ -91,6 +91,31 @@ Prefer to read it first? [`cloudshell/run-all.sh`](cloudshell/run-all.sh) is
 the same script, uncompressed — upload it with **Actions → Upload file** and
 run `bash run-all.sh`. Details in [`cloudshell/README.md`](cloudshell/README.md).
 
+## Capturing the console screenshots
+
+The rubric asks for console screenshots. Rather than clicking through the
+console by hand:
+
+```powershell
+.\scripts\capture-evidence.ps1
+```
+
+It drives a **real Chrome session against the real AWS console**, screenshots
+the Bedrock Evaluations, DynamoDB, Lambda, CloudWatch and CloudFormation
+pages, saves them into `evidence/run-NN/screenshots/`, uploads them to the
+evaluation S3 bucket, and commits them.
+
+The first run opens a browser window and waits for you to sign in. That
+session is saved to a git-ignored profile, so every later run is fully
+automatic. `-Federated -CreateUser` removes the manual sign-in entirely by
+minting a console URL with `sts:GetFederationToken` — which needs an IAM
+user, since root cannot call it.
+
+One deliberate limitation: it screenshots the console, it does not render
+console-lookalike pages from API data. A fabricated image presented as a
+console screenshot is a falsified record, so the browser really does load
+each page.
+
 ## Running it yourself
 
 The project is deployed and verified in account `212626318772`, `us-east-1`.

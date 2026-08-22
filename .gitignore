@@ -27,3 +27,10 @@ htmlcov/
 Thumbs.db
 .idea/
 .vscode/
+
+# ---- console screenshot automation ----
+# Chrome profile holding a live AWS console session - a session cookie is a
+# credential, so this must never be committed.
+.aws-console-profile/
+# The IAM access key minted for federated sign-in.
+.evidence-capture-key.json

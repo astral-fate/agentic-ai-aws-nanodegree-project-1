@@ -197,8 +197,16 @@ stops it earlier.
 3. **Note the correctness score** printed at step 12 and paste it into
    `docs/EVALUATION.md` → Run 2.
 4. **Download `evidence.tar.gz`** (CloudShell → Actions → Download file).
-5. **Take three screenshots:** the Bedrock Evaluations results page, the
-   DynamoDB table with items, and the Lambda console test result.
+5. **Capture the screenshots** - automated:
+
+   ```powershell
+   .\scripts\capture-evidence.ps1
+   ```
+
+   Drives a real Chrome session against the AWS console, saves the PNGs into
+   `evidence/run-NN/screenshots/`, uploads them to S3, and commits them. The
+   first run opens a browser window for you to sign in once; every run after
+   that is automatic. Add `-Federated -CreateUser` to skip even that.
 6. **Check the brownie case** returns `1-800-555-0199` at step 09.
 7. Switch off root credentials — run 1 used
    `arn:aws:iam::212626318772:root`. See [`docs/SECURITY.md`](docs/SECURITY.md).

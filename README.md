@@ -19,16 +19,35 @@ not in condition nodes or a separate classifier.
 
 | | |
 |---|---|
-| Offline test suite | **83 tests, all passing** — `python -m pytest` |
-| System prompt | Written, hardened against prompt injection |
+| Offline test suite | **115 tests, all passing** — `python -m pytest` |
+| System prompt | Written, hardened against injection, **revised after run 1** |
 | Test suite for evaluation | 21 cases across all three routes + edge cases |
-| AWS deployment | **Not yet run** — needs credentials, see [below](#before-you-can-deploy) |
-| Bedrock Evaluations run | **Not yet run** — [`docs/EVALUATION.md`](docs/EVALUATION.md) is ready to record it |
+| AWS deployment | **Done** — deployed and verified end to end in `us-east-1` |
+| Bedrock Evaluations | **Run 1 complete** — 21/21 records, 0 harness errors |
+| Current state | Run 1 found three real defects; all fixed, **awaiting re-run** |
 
-The offline suite exercises the real Lambda, the real streaming parsers, the
-real dataset writer and the real templates. It does **not** exercise Nova
-Pro's judgement — only a live Bedrock Evaluations run can score the routing
-quality. See [What the tests do and do not prove](#what-the-tests-do-and-do-not-prove).
+### What run 1 found
+
+The offline suite was green and the model still got the most important
+behaviour wrong — which is exactly the split between "the wiring is correct"
+and "the model behaves". Full write-up in
+[`docs/EVALUATION.md`](docs/EVALUATION.md).
+
+1. **The bug-report route failed.** Nova called `create_bug_report` on turn 1
+   with only a description, **fabricating** the steps and environment to
+   satisfy the required fields — then filed a *second*, duplicate ticket on
+   turn 2, describing it as an "update". Three bug reports produced 11
+   DynamoDB rows.
+2. **`<thinking>` tags leaked** into customer-facing replies, and therefore
+   into the evaluation dataset the judge scores.
+3. **OTHER wasn't read as the catch-all.** Asked for a brownie recipe, Nova
+   decided the message fitted "none of the categories" and skipped the
+   hand-off entirely.
+
+All three are fixed in the prompt, each with a regression test. The fix that
+mattered most was replacing a negative constraint ("do not call the tool
+before you have all three") with one that has a checkable trigger: *your first
+reply to a bug report is always a question, never a tool call.*
 
 ---
 
@@ -62,31 +81,27 @@ Prefer to read it first? [`cloudshell/run-all.sh`](cloudshell/run-all.sh) is
 the same script, uncompressed — upload it with **Actions → Upload file** and
 run `bash run-all.sh`. Details in [`cloudshell/README.md`](cloudshell/README.md).
 
-## Before you can deploy
+## Running it yourself
 
-Two things are missing on this machine, and neither is something the project
-can work around:
+The project is deployed and verified in account `212626318772`, `us-east-1`.
+To reproduce it in any account, use the one-command CloudShell runner above —
+it needs nothing but Nova Pro model access enabled in the Bedrock console.
 
-1. **The AWS CLI is not installed.** `aws --version` → not found.
-   Install it from
-   <https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html>,
-   or run the CloudFormation steps from the Udacity workspace instead.
+Locally, the offline suite runs with no AWS account at all:
 
-2. **No credentials for this project's AWS account.** `.env` has the slots
-   ready but empty. The `saudispace` keys that are also in `.env` **cannot**
-   run this project — their IAM policy grants only
-   `s3:PutObject/GetObject/DeleteObject` on `arn:aws:s3:::saudispace/*`, in
-   `eu-north-1`. This project needs CloudFormation, Lambda, DynamoDB, IAM,
-   Bedrock and Bedrock AgentCore in `us-east-1`.
+```bash
+python -m pytest      # 115 tests, ~4 seconds
+```
 
-> ⚠️ **Rotate the `saudispace` keys.** They were pasted in plaintext into a
-> chat transcript, so treat them as compromised. See
+The AWS CLI is not installed on the original development machine, which is
+why the live run happens in CloudShell — it has the CLI, credentials and
+Python already.
+
+> **Note on credentials.** The run 1 preflight reported
+> `arn:aws:iam::212626318772:root`. Root has no permission boundary and its
+> access keys cannot be scoped or rotated per-service. Create an IAM user
+> with the permissions this project needs and use that instead. See
 > [`docs/SECURITY.md`](docs/SECURITY.md).
-
-Everything else — the prompt, the tests, the templates, the scripts — is
-finished and verified as far as it can be without an account.
-
----
 
 ## Quick start
 
@@ -100,7 +115,7 @@ pip install -r requirements.txt -r requirements-dev.txt
 
 cp .env.example .env              # then fill in your AWS keys
 
-python -m pytest                  # 83 offline tests, no AWS needed
+python -m pytest                  # 115 offline tests, no AWS needed
 ```
 
 Loading `.env` into your shell:

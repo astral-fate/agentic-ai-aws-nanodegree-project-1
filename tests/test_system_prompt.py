@@ -112,3 +112,62 @@ def test_the_prompt_is_substantial_but_not_bloated(rendered_prompt):
     cost. Nova Pro has plenty of room for this, but a runaway FAQ would not
     be fine."""
     assert 4_000 < len(rendered_prompt) < 40_000
+
+
+# --- rules added after the first live run on AWS ---------------------------
+#
+# The first end-to-end run against Nova Pro exposed three behaviours the
+# baseline prompt did not prevent, all of them invisible to the offline
+# suite. Each now has a rule in the prompt and a test here.
+# See docs/EVALUATION.md, "Run 1".
+
+
+def test_the_first_bug_reply_is_always_a_question(system_prompt_text):
+    """Live run: Nova called create_bug_report on turn 1, fabricating the
+    steps and environment to satisfy the required fields. "Do not call the
+    tool before you have all three" is a negative constraint with no
+    checkable trigger; "your first reply is always a question" has one."""
+    low = _flat(system_prompt_text)
+
+    assert "first reply to a bug report is always a question" in low
+    assert "never a tool call" in low
+
+
+def test_inventing_field_values_is_forbidden(system_prompt_text):
+    """The Lambda rejects blank fields, so a model that wants to call the
+    tool early invents plausible values instead. That is worse than a blank:
+    engineering chases a bug nobody reported."""
+    low = _flat(system_prompt_text)
+
+    assert "never invent a value" in low
+    assert "placeholder" in low
+
+
+def test_duplicate_tickets_are_called_out_as_harmful(system_prompt_text):
+    """Live run: the model filed a second ticket on the next turn, saying it
+    had "updated" the first. Saying "exactly once" was not enough - the
+    prompt now explains that no update path exists."""
+    low = _flat(system_prompt_text)
+
+    assert "exactly once per problem" in low
+    assert "no way to update a ticket" in low
+
+
+def test_reasoning_tags_are_forbidden(system_prompt_text):
+    """Live run: replies began with "<thinking> The customer is reporting a
+    bug...". That reaches the customer verbatim, and pollutes the evaluation
+    dataset the judge scores."""
+    low = _flat(system_prompt_text)
+
+    assert "<thinking>" in low
+    assert "never write out your reasoning" in low
+
+
+def test_other_is_stated_as_the_default_category(system_prompt_text):
+    """Live run: asked for a brownie recipe, Nova concluded the message fitted
+    "none of the categories" - while listing OTHER as one of them - and
+    skipped the hand-off. OTHER has to read as the catch-all."""
+    low = _flat(system_prompt_text)
+
+    assert "the default" in low
+    assert "never a message that fits" in low

@@ -25,6 +25,10 @@ if grep -q $'\r' run-all.sh; then
   tr -d '\r' < run-all.sh > run-all.sh.tmp && mv run-all.sh.tmp run-all.sh
 fi
 
+# Re-inline system_prompt.txt and harness-tests.json from project/starter,
+# so the CloudShell run can never deploy a stale prompt.
+python3 sync-inline.py
+
 HASH="$(sha256sum run-all.sh | cut -d' ' -f1)"
 
 {

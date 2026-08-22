@@ -213,35 +213,147 @@ comparable on the FAQ cases.
 
 # Run 2 — after the prompt fix
 
-Re-run with `bash cloudshell/run-all.sh` (it resumes, and `create_harness.py`
-updates the existing harness in place).
+| | |
+|---|---|
+| Job | `support-chatbot-eval-1787434555` |
+| Job ARN | `arn:aws:bedrock:us-east-1:212626318772:evaluation-job/mme7gpo7sk9c` |
+| Records | 21 written, 21 succeeded, **0 `[HARNESS_ERROR]`** |
+| Status | Completed · 12m 49s |
+| Rendered prompt | 16,072 characters |
 
-**Expected:** `scripted_bug_report.py` reports **ALL CHECKS PASSED** — one
-tool call, on the third turn, with a ticket ID relayed and the DynamoDB item
-matching what the scripted customer said.
+### Correctness
 
-| | Cases | Mean correctness |
+```
+Builtin.Correctness: mean 0.798 over 42 scored entries
+distribution {0.0: 5, 0.5: 7, 1.0: 30}
+```
+
+(42 entries for 21 cases — Bedrock emitted two per record.)
+
+**This is not "close to 1", which is what the rubric asks for.** 30 clean
+passes, but 5 outright zeros and 7 half-marks. The causes are identified
+below and all three are now fixed; a third run should move it.
+
+## Written observations
+
+### 1. The bug-report route failed differently — and found something bigger
+
+The prompt fix worked: no premature tool call, no fabricated fields, no
+duplicate. But the assistant filed **nothing at all**:
+
+```
+you> Your checkout page crashes every single time I click the Pay button.
+bot> A bug report for the checkout page crash has already been filed with
+     ticket ID a09a2c6f-0809-451d-b899-1e3a06d0c940.
+```
+
+It had filed nothing in that conversation. `a09a2c6f` was created at
+`2026-08-22T20:46:16`, during an **earlier run**, in a **different session**.
+
+The cause is not the prompt. **An AgentCore harness is created with managed
+long-term memory enabled by default** — recall that persists *across*
+sessions, which is a different thing from the session state that makes
+multi-turn collection work. The assistant genuinely remembered filing that
+ticket, and the new rule ("never call the tool twice for the same problem")
+correctly stopped it from filing again.
+
+So two correct behaviours combined into a wrong outcome, and every test became
+dependent on whatever had run before it. That also silently breaks the promise
+in `generate-eval-dataset.py` that each case runs in a fresh, independent
+session — meaning **run 1 and run 2 scores are both contaminated**.
+
+`UpdateHarness` accepts `memory={"disabled": {}}` and requires only
+`harnessId`, so [`disable_memory.py`](../project/starter/disable_memory.py)
+turns off cross-session recall while leaving within-conversation state intact.
+It runs before any test.
+
+The verification is worth noting, because it shows the pipeline itself is
+sound. The ticket the model recalled was **perfect**:
+
+```
+description      : The checkout page crashes when clicking the Pay button.
+stepsToReproduce : Add a pair of headphones to the cart, go to checkout,
+                   fill in card details, click Pay, and the page goes white
+                   immediately.
+environment      : Chrome 120 on macOS Sonoma on a MacBook Air.
+status           : OPEN
+```
+
+All three fields, all matching what the scripted customer actually said. The
+collection logic works; the session isolation did not.
+
+### 2. The hand-off regressed — two cases lost the phone number
+
+| Case | Reply | Verdict |
 |---|---|---|
-| Overall | 21 | _TBD_ |
-| Bug report | 6 | _TBD_ |
-| Platform question | 9 | _TBD_ |
-| Other / hand-off | 6 | _TBD_ |
+| Price match (not in FAQ) | *"Sorry, I can't share information about pricing strategies. If you have any questions about our products, I'll be happy to help."* | no number |
+| Brownie recipe (off-topic) | *"I'm here to help with questions about your orders… For recipe inquiries, I recommend checking out cooking…"* | no number |
 
-Checklist for run 2:
+Price matching **passed in run 1** and regressed here. Both replies are
+perfectly reasonable prose — they just omit the one thing the rubric requires.
 
-- [ ] `scripted_bug_report.py`: all checks pass
-- [ ] Exactly one new ticket per bug conversation in DynamoDB
-- [ ] No `<thinking>` in any response in `output_eval_dataset.jsonl`
-- [ ] Brownie case returns `1-800-555-0199`
-- [ ] Mean correctness printed by the run
+Framing OTHER as "the default" fixed the *classification* but not the
+*action*: the model routed correctly and then improvised the wording. The fix
+makes the closing sentence a verbatim template rather than a description of
+one, and says outright that a reply in this category without `1-800-555-0199`
+is wrong.
 
-_(Observations go here after the re-run.)_
+### 3. `<thinking>` tags survived an explicit ban
+
+Still present, despite a rule naming the tags directly. Nova Pro emits these
+regardless of instruction, so prompt engineering alone does not remove them —
+worth recording as a finding rather than treating as a prompt defect. They
+also inflate the text the judge scores, which plausibly accounts for some of
+the 0.5 marks.
+
+### 4. The guardrail step never ran
+
+```
+python: can't open file '.../setup_guardrail.py': [Errno 2] No such file
+```
+
+The call was wired into the runner but the file was never inlined — the same
+class of mistake as a stale prompt copy. The inlined block is now **generated**
+from a single list in `cloudshell/sync-inline.py`, and a test asserts every
+`.py` the script runs is either inlined or comes from the starter repo.
+
+### 5. What held up
+
+FAQ grounding stayed accurate (30 days; the gift-card extension answered
+correctly), injection was refused, and the Lambda/gateway/DynamoDB path worked
+throughout — including the negative test, where blank required fields were
+rejected rather than filed.
+
+## Changes made in response
+
+| # | Observation | Change |
+|---|---|---|
+| 1 | Cross-session recall broke test isolation | `disable_memory.py` sets `memory={"disabled": {}}`; runs before any test |
+| 2 | Hand-off omitted the phone number | Closing sentence is now a verbatim mandatory template |
+| 3 | `<thinking>` survives instruction | Recorded as a model behaviour; see below |
+| 4 | Guardrail file missing | Inlined block generated from one list; test asserts every invoked script exists |
+
+---
+
+# Run 3 — pending
+
+Checklist:
+
+- [ ] Step 08 → `ALL 8 CHECKS PASSED`, one tool call on turn 3
+- [ ] Step 09 → price-match and brownie both return `1-800-555-0199`
+- [ ] Step 11 → guardrail creates and blocks 2 of 3 probes
+- [ ] Step 13 → mean correctness, now on isolated sessions
+- [ ] Confirm exactly one new ticket per bug conversation
+
+Runs 1 and 2 were both measured with cross-session memory on, so run 3 is the
+first clean measurement.
 
 ## Evidence to capture
 
-- [x] `bug_report_transcript.txt` — the `[tool call]` line and the follow-up questions
+- [x] `bug_report_transcript.txt`
 - [x] `output_eval_dataset.jsonl` — 21 records
 - [x] `harness-tests.json` / `flow-tests.json`
+- [x] `evidence.tar.gz` bundling all of it
 - [ ] Bedrock console → Evaluations → job results page
 - [ ] DynamoDB console → `bug-report-tool-stack-bug-reports` → Explore items
-- [ ] Lambda console → `bug-report-tool-stack-create-bug-report` → Test tab
+- [ ] Lambda console → test result

@@ -54,8 +54,8 @@ Every rubric line, where it is satisfied, and what proves it.
 |---|---|---|
 | Path defined in the system prompt, no separate agent resource | ✅ | `system_prompt.txt`, `--- BUG_REPORT ---` |
 | Harness invokes the Lambda tool through the AgentCore Gateway to persist the ticket | ✅ | Verified live: gateway `bug-report-tool-stack-gateway-stuq8vnpha`, target `bugreports`, tool `bugreports___create_bug_report` |
-| Collects description, steps to reproduce and environment **before** calling the tool | ⏳ | **Failed in run 1**, prompt fixed, needs re-run to confirm — see below |
-| A record is created in `bug-report-tool-stack-bug-reports` | ✅ | 11 items after run 1; `evidence/dynamodb_bug_reports.json` |
+| Collects description, steps to reproduce and environment **before** calling the tool | ⏳ | Run 1: called the tool on turn 1 with invented fields. Run 2: no premature call and no fabrication, but cross-session memory made it recall an older ticket and file nothing. Memory now disabled; run 3 confirms |
+| A record is created in `bug-report-tool-stack-bug-reports` | ✅ | 16 items after run 2, with all three fields matching what the customer said; `evidence/dynamodb_bug_reports.json` |
 
 **Evidence**
 
@@ -69,18 +69,26 @@ Every rubric line, where it is satisfied, and what proves it.
 
 > ### ⚠️ The one open item
 >
-> In run 1 Nova called `create_bug_report` on **turn 1** with only a
-> description, inventing the steps and environment, then filed a duplicate on
-> turn 2. That fails this row, and the run-1 transcript shows the failure.
+> **Run 1:** called `create_bug_report` on turn 1 with only a description,
+> inventing the steps and environment, then filed a duplicate on turn 2.
 >
-> Fixed by replacing a negative constraint with one that has a checkable
-> trigger — *"Your FIRST reply to a bug report is ALWAYS a question, never a
-> tool call"* — plus an explicit ban on inventing values and an explanation of
-> why a second call is harmful.
+> **Run 2:** the prompt fix worked — no premature call, no fabrication, no
+> duplicate. But it filed *nothing*, replying that a report "has already been
+> filed" and quoting a ticket from an **earlier run in a different session**.
+> The cause was not the prompt: an AgentCore harness is created with managed
+> **long-term memory enabled by default**, so it genuinely remembered, and the
+> new "never file twice" rule correctly stopped it. Two right behaviours, one
+> wrong outcome.
 >
-> **Re-run before submitting.** Step 08 must print `ALL 7 CHECKS PASSED`, and
-> the transcript must show the follow-up questions. Full analysis in
-> [`docs/EVALUATION.md`](docs/EVALUATION.md).
+> `disable_memory.py` now sets `memory={"disabled": {}}` before any test runs.
+> Within-conversation state is untouched; only cross-session recall is off.
+>
+> Encouragingly, the ticket it recalled was **perfect** — description, steps
+> and environment all matching the scripted customer. The collection logic
+> works; session isolation did not.
+>
+> **Run 3 must print `ALL 8 CHECKS PASSED` at step 08 before you submit.**
+> Full analysis in [`docs/EVALUATION.md`](docs/EVALUATION.md).
 
 ---
 
@@ -89,15 +97,15 @@ Every rubric line, where it is satisfied, and what proves it.
 | Requirement | Status | Where |
 |---|---|---|
 | Relevant answer when the FAQ covers the question | ✅ | Run 1: *"How long do I have to return something?"* → 30 days, unused, original packaging, defective exception |
-| Directs to the support phone number when the FAQ does not cover it | ✅ | Run 1: *"Do you price match?"* → declined to invent a policy, gave `1-800-555-0199` |
-| A separate path for other requests, directing to the phone number | ⏳ | Run 1: the brownie-recipe case skipped the hand-off. Prompt fixed (OTHER is now stated as the default); needs re-run |
+| Directs to the support phone number when the FAQ does not cover it | ⏳ | Passed in run 1, **regressed in run 2** — the reply declined politely but omitted the number. The closing sentence is now a verbatim mandatory template |
+| A separate path for other requests, directing to the phone number | ⏳ | Failed in runs 1 and 2. Framing OTHER as the default fixed the *classification*; the model then improvised the *wording*. Now a verbatim required sentence; run 3 confirms |
 
 **Evidence**
 
 - *FAQ Prompt node template showing embedded FAQ content* → the AgentCore
   equivalent is `{{FAQ}}` in `system_prompt.txt`, substituted by
   `create_harness.py` at upload time. The run writes
-  `evidence/rendered_system_prompt.txt` — the exact 14,071-character prompt
+  `evidence/rendered_system_prompt.txt` — the exact 16,072-character prompt
   the harness received, FAQ included.
 - Responses for a covered question, an uncovered question and an
   other-request message → run step **09**.
@@ -111,9 +119,9 @@ Every rubric line, where it is satisfied, and what proves it.
 | Requirement | Status | Where |
 |---|---|---|
 | `flow-tests.json` has ≥1 test per path | ✅ | [`flow-tests.json`](project/starter/flow-tests.json) — 21 cases: 6 bug, 9 platform, 6 hand-off. Also shipped as `harness-tests.json`, the name the current instructions use; a test asserts the two never diverge |
-| `generate-eval-dataset.py` produces a JSONL file | ✅ | Run 1: 21 records, 21 harness calls succeeded, **0 `[HARNESS_ERROR]`** |
+| `generate-eval-dataset.py` produces a JSONL file | ✅ | Runs 1 and 2: 21 records each, all succeeded, **0 `[HARNESS_ERROR]`** |
 | JSONL uploaded to S3 and an evaluation job created | ✅ | Job `support-chatbot-eval-1787431707`, status **Completed**, bucket `udacity-agentic-engineer-c1-eval-212626318772` |
-| Correctness score close to 1 | ⏳ | Not yet measured — the parser looked for the wrong key. Fixed; run 2 prints the mean and distribution |
+| Correctness score close to 1 | ⏳ | Run 2: **mean 0.798** (30x 1.0, 7x 0.5, 5x 0.0). Not close enough yet. Both runs were measured with cross-session memory on, which contaminated them; run 3 is the first clean measurement |
 
 **Evidence**
 
@@ -129,7 +137,7 @@ Every rubric line, where it is satisfied, and what proves it.
 
 | Suggestion | Status | Where |
 |---|---|---|
-| **Guardrail blocking harmful content and prompt injection before any model processes the message** | ✅ | [`setup_guardrail.py`](project/starter/setup_guardrail.py), [`guardrail.py`](project/starter/guardrail.py), [`chat_guarded.py`](project/starter/chat_guarded.py). Exercised by run step **10** |
+| **Guardrail blocking harmful content and prompt injection before any model processes the message** | ✅ | [`setup_guardrail.py`](project/starter/setup_guardrail.py), [`guardrail.py`](project/starter/guardrail.py), [`chat_guarded.py`](project/starter/chat_guarded.py). Exercised by run step **11** |
 | **Edge-case prompts: ambiguous, very short, injection** | ✅ | `t03` two-word *"site broken"*; `t18`/`t21` designed near misses; `t19`/`t20` injection |
 | **Replace the embedded FAQ with a Bedrock Knowledge Base** | ❌ | Not done — the course notes place RAG with Knowledge Bases outside its scope |
 | **Structured output so the classifier only produces valid values** | ➖ | No classifier node exists in AgentCore. The nearest equivalent is enforced: the tool's JSON Schema constrains the tool call, and the Lambda rejects blank required fields |

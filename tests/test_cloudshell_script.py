@@ -31,24 +31,8 @@ def _heredoc(script: str, delim: str) -> str | None:
     return match.group(1) + "\n" if match else None
 
 
-def test_the_inlined_system_prompt_matches_the_repo(script, starter_dir):
-    inlined = _heredoc(script, "PROMPT_EOF")
-
-    assert inlined is not None, "PROMPT_EOF heredoc not found"
-    assert inlined == (starter_dir / "system_prompt.txt").read_text(encoding="utf-8"), (
-        "cloudshell/run-all.sh would deploy a different system prompt than the "
-        "one in project/starter - re-copy it into the PROMPT_EOF heredoc"
-    )
 
 
-def test_the_inlined_test_suite_matches_the_repo(script, harness_tests):
-    inlined = _heredoc(script, "TESTS_EOF")
-
-    assert inlined is not None, "TESTS_EOF heredoc not found"
-    assert json.loads(inlined) == harness_tests, (
-        "cloudshell/run-all.sh would run a different test suite than "
-        "harness-tests.json"
-    )
 
 
 def _working_bash() -> str | None:
@@ -271,3 +255,81 @@ def test_the_rendered_prompt_is_captured(script):
     """The AgentCore stand-in for the rubric's 'FAQ Prompt node template
     showing embedded FAQ content' - the prompt with {{FAQ}} substituted."""
     assert 'replace("{{FAQ}}", faq)' in script
+
+
+# --- the generated inlined-deliverables block ------------------------------
+#
+# run-all.sh carries copies of the project's own files so it can be pasted
+# into CloudShell. Hand-maintaining them went wrong twice: an edited prompt
+# that was never re-inlined, and a call to setup_guardrail.py wired in while
+# the file itself was not, which killed step 10 on a live run. The block is
+# generated from cloudshell/sync-inline.py's INLINED list now, and these tests
+# hold that contract.
+
+
+def _inlined_names(request) -> list[str]:
+    sync = (request.config.rootpath / "cloudshell" / "sync-inline.py").read_text(
+        encoding="utf-8"
+    )
+    block = re.search(r"INLINED = \[(.*?)\n\]", sync, re.S).group(1)
+    return re.findall(r'"([^"]+)"', block)
+
+
+def test_every_inlined_file_is_written_by_the_script(request, script):
+    for name in _inlined_names(request):
+        assert f"cat > {name} <<" in script, f"{name} is listed but not written"
+
+
+def test_every_inlined_file_matches_project_starter(request, script, starter_dir):
+    """The prompt regression: edit project/starter, forget to re-inline, and
+    CloudShell silently deploys the old version."""
+    for name in _inlined_names(request):
+        delim = "INLINE_" + name.replace(".", "_").replace("-", "_").upper()
+        inlined = _heredoc(script, delim)
+
+        assert inlined is not None, f"no {delim} heredoc for {name}"
+        wanted = (starter_dir / name).read_text(encoding="utf-8")
+        assert inlined == wanted, (
+            f"the inlined {name} differs from project/starter/{name} - "
+            "run cloudshell/regenerate-paste.sh"
+        )
+
+
+def test_every_python_script_it_runs_actually_exists(request, script):
+    """The bug this exists for: `python setup_guardrail.py` was wired into
+    step 10 while the file was never inlined, so a live run failed with
+    "No such file or directory"."""
+    # Files the script clones from the Udacity starter repo.
+    from_starter = {
+        "chat.py", "cleanup_agentcore.py", "create_bug_report.py",
+        "create_harness.py", "generate-eval-dataset.py", "setup_gateway.py",
+    }
+    available = set(_inlined_names(request)) | from_starter
+
+    invoked = set(re.findall(r"^\s*python3? ([A-Za-z0-9_-]+\.py)", script, re.M))
+
+    missing = invoked - available
+    assert not missing, (
+        f"run-all.sh runs {sorted(missing)} but neither inlines them nor gets "
+        "them from the starter repo"
+    )
+
+
+def test_the_generated_block_has_its_markers(script):
+    assert "# >>> BEGIN INLINED DELIVERABLES" in script
+    assert "# <<< END INLINED DELIVERABLES" in script
+    assert "do not edit by hand" in script
+
+
+def test_memory_is_scoped_before_any_test_runs(script):
+    """Cross-session recall made every test depend on what ran before it, so
+    it has to be turned off before the bug report and the eval dataset."""
+    # Search only the executable part: the inlined files contain these
+    # same strings inside their own docstrings.
+    body = script[script.index("# <<< END INLINED DELIVERABLES"):]
+    disable = body.index("python disable_memory.py")
+    bug_report = body.index("python scripted_bug_report.py")
+    dataset = body.index("generate-eval-dataset.py --tests-json")
+
+    assert disable < bug_report, "memory must be scoped before the bug report"
+    assert disable < dataset, "memory must be scoped before the eval dataset"

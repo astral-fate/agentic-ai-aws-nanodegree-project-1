@@ -63,8 +63,16 @@ Every rubric line, where it is satisfied, and what proves it.
   `THE GATE` block.
 - Transcript with follow-up questions and the
   `[tool call] bugreports___create_bug_report` line →
-  `evidence/bug_report_transcript.txt`, produced by
-  [`scripted_bug_report.py`](project/starter/scripted_bug_report.py).
+  [`evidence/run-01/bug_report_transcript.txt`](evidence/run-01/bug_report_transcript.txt),
+  produced by [`scripted_bug_report.py`](project/starter/scripted_bug_report.py).
+
+  > ⚠️ **The run-01 transcript is missing the tool-call line.**
+  > `scripted_bug_report.py` wrote a `bot> ` placeholder and then overwrote
+  > the last transcript entry with the reply — clobbering the `[tool call]`
+  > line appended in between. The console printed it (it is in the run-4
+  > terminal output) but the saved file did not, so this artefact does not
+  > yet prove what the rubric asks. Fixed, with a regression test; **re-run
+  > to regenerate it**, or screenshot the terminal output instead.
 - 📸 DynamoDB console → `bug-report-tool-stack-bug-reports` → **Explore items**.
 
 > ### ⚠️ The one open item

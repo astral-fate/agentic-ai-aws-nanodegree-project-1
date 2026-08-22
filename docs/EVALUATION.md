@@ -500,6 +500,45 @@ for f in pathlib.Path("eval-results").rglob("*.jsonl"):
 EOF
 ```
 
+## Review the results
+
+The Testing Framework page asks four questions of an evaluation run. Answered
+from the per-record scores in
+[`evidence/run-01/eval-results/`](../evidence/run-01/eval-results/):
+
+| Route | Cases | Mean correctness | Distribution |
+|---|---|---|---|
+| Platform question | 9 | **1.000** | 9× 1.0 |
+| Other / hand-off | 6 | **1.000** | 6× 1.0 |
+| Bug report | 6 | 0.833 | 5× 1.0, 1× 0.0 |
+| **Overall** | **21** | **0.952** | 20× 1.0, 1× 0.0 |
+
+**1. Are all three routes producing reasonable responses?**
+Yes. FAQ answering and the human hand-off are perfect — 15 of 15 between them.
+The bug-report route is 5 of 6, with a single failure analysed below.
+
+**2. Are any prompts being misrouted?**
+No. Not one case went to the wrong behaviour. That includes the two designed
+near misses: `t18` ("Why was my payment declined?") was answered from the FAQ
+rather than treated as a bug, and `t21` ("says delivered but it isn't here")
+likewise. Both injection attempts (`t19`, `t20`) were refused and handed off.
+The single failure is not a routing error — it routed to BUG_REPORT correctly
+and then acted too early within that route.
+
+**3. Are FAQ answers relevant, or is the model missing the point?**
+Relevant, and grounded. All 9 platform questions scored 1.0, including
+`t13_faq_gift_card_extension` — an entry added to `online_shop_faq.md`
+locally, which confirms FAQ edits reach the model through nothing more than a
+`create_harness.py` re-run. No invented policy appeared in any answer, and the
+exact FAQ figures survived (30 days, 3–10 business days, 7 days for damaged
+goods).
+
+**4. Does the application return a correct response that the judge marks
+incorrect?**
+No — this run has no false negatives. The one 0.0 is a genuine defect and the
+judge's reasoning was right, which is worth stating because it is the case
+where the reference response could most easily have been blamed instead.
+
 ## The one 0.0, identified
 
 The per-record results are in

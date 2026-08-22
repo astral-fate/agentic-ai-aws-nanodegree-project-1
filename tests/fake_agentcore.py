@@ -96,6 +96,14 @@ class FakeTable:
         self.items.append(dict(Item))
         return {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
+    def get_item(self, Key, **_kwargs):  # noqa: N803 - boto3 casing
+        """``scripted_bug_report.py`` reads a filed ticket back by id."""
+        ticket_id = Key.get("ticketId")
+        for item in self.items:
+            if item.get("ticketId") == ticket_id:
+                return {"Item": dict(item)}
+        return {}  # boto3 omits "Item" entirely when nothing matches
+
     def scan(self, **_kwargs):
         return {"Items": list(self.items), "Count": len(self.items)}
 

@@ -325,3 +325,53 @@ def test_only_bug_cases_ever_reach_the_tool(fake_runtime, harness_tests):
     assert fake_runtime.tool_invocations == [], (
         "a non-bug prompt called create_bug_report"
     )
+
+
+# --- transcript evidence ---------------------------------------------------
+
+
+def test_the_transcript_keeps_the_tool_call_line(
+    monkeypatch, fake_runtime, tmp_path, agentcore_config
+):
+    """The rubric asks for "a chat.py transcript ... showing the follow-up
+    questions and the [tool call] bugreports___create_bug_report line".
+
+    An earlier version wrote a "bot> " placeholder into the transcript and
+    then overwrote transcript[-1] with the reply - which clobbered the
+    tool-call line send() had appended in between. The console showed it; the
+    saved file did not, so the submitted evidence was missing the one thing it
+    had to prove.
+    """
+    import sys
+
+    from conftest import STARTER, _load_module
+
+    monkeypatch.setattr("boto3.client", lambda *a, **k: fake_runtime)
+    monkeypatch.setattr(
+        "boto3.resource", lambda *a, **k: type(
+            "R", (), {"Table": lambda self, n: fake_runtime.table}
+        )()
+    )
+    transcript = tmp_path / "bug_report_transcript.txt"
+    monkeypatch.setattr("sys.argv", [
+        "scripted_bug_report.py",
+        "--config", str(agentcore_config),
+        "--transcript", str(transcript),
+    ])
+
+    sys.modules.pop("scripted_bug_report", None)
+    module = _load_module(STARTER / "scripted_bug_report.py", "scripted_bug_report")
+    try:
+        module.main()
+    except SystemExit:
+        pass  # verification may fail; the transcript is what is under test
+
+    text = transcript.read_text(encoding="utf-8")
+
+    assert "[tool call] bugreports___create_bug_report" in text, (
+        "the saved transcript lost the tool-call line"
+    )
+    # The follow-up questions must survive too.
+    assert text.count("you> ") == 3
+    assert text.count("bot> ") == 3
+    assert "bot> \n" not in text, "an empty bot> placeholder leaked into the file"

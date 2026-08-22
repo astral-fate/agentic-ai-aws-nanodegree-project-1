@@ -10,7 +10,7 @@ the project assumes that region.
 aws --version                 # install the CLI if this fails
 aws sts get-caller-identity   # confirms which account you are in
 
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python -c "import boto3; print(boto3.__version__)"   # needs 1.43+
@@ -144,9 +144,15 @@ aws cloudformation deploy \
 
 ## 7. Generate the eval dataset
 
+The suite starts from the template the course ships:
+
 ```bash
+cp harness-tests-template.json harness-tests.json   # already done in this repo
 python generate-eval-dataset.py --tests-json harness-tests.json
 ```
+
+`harness-tests.json` is committed with 21 cases, so the copy is only needed if
+you want to start over from the template.
 
 One harness call per test case, each in a fresh session, written to
 `output_eval_dataset.jsonl`. Any line whose `response` starts with

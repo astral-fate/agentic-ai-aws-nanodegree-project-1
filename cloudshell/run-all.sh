@@ -621,9 +621,13 @@ def main():
         print(f"you> {text}")
         transcript.append(f"you> {text}")
         print("bot> ", end="", flush=True)
-        transcript.append("bot> ")
+        # send() appends a "[tool call] ..." line to the transcript the moment
+        # one streams in, so the reply is appended AFTER it returns. Writing a
+        # "bot> " placeholder first and then overwriting transcript[-1] would
+        # clobber that tool-call line - which is exactly the evidence the
+        # rubric asks for.
         reply, tools = send(rt, config, session_id, text, transcript)
-        transcript[-1] = f"bot> {reply}"
+        transcript.append(f"bot> {reply}")
         transcript.append("")
         all_tools += tools
         last_reply = reply

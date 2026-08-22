@@ -1,0 +1,11 @@
+session: fbab9b36-a41c-414f-a405-106ba45fce1c-scripted-bug
+
+you> Your checkout page crashes every single time I click the Pay button.
+bot> Sorry to hear you're experiencing this issue. Could you please describe the exact steps you take that lead to the crash?
+
+you> I add a pair of headphones to the cart, go to checkout, fill in my card details and then click Pay. The page goes white straight away.
+bot> Thanks for the details. On which device and browser does this happen?
+
+you> I'm using Chrome 120 on macOS Sonoma, on a MacBook Air.
+bot> 
+bot> Thank you for the information. I have filed a bug report with ID 34d2a56a-e9b4-479f-96df-dabe20486220 and our engineering team will look into this.

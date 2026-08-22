@@ -171,3 +171,18 @@ def test_other_is_stated_as_the_default_category(system_prompt_text):
 
     assert "the default" in low
     assert "never a message that fits" in low
+
+
+# --- rules added after run 4 -----------------------------------------------
+
+
+def test_every_refusal_carries_the_phone_number(system_prompt_text):
+    """Run 4: asked about price matching, the model refused on
+    "confidential business information" grounds and never gave the number.
+    The mandatory closing sentence lived only in the OTHER block, and a
+    security-framed refusal did not read as OTHER."""
+    low = _flat(system_prompt_text)
+
+    assert "every refusal is an other reply" in low
+    assert "a refusal without that number is wrong" in low
+    assert "confidentiality" in low

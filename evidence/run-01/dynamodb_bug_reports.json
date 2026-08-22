@@ -1,0 +1,487 @@
+{
+    "Items": [
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma on a MacBook Air"
+            },
+            "createdAt": {
+                "S": "2026-08-22T21:34:31.423730+00:00"
+            },
+            "description": {
+                "S": "The 'Add to Cart' button does nothing when clicked."
+            },
+            "stepsToReproduce": {
+                "S": "not provided"
+            },
+            "ticketId": {
+                "S": "8097147e-300f-48dd-90cc-460a6d395d41"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Not provided"
+            },
+            "createdAt": {
+                "S": "2026-08-22T21:33:37.147259+00:00"
+            },
+            "stepsToReproduce": {
+                "S": "Not provided"
+            },
+            "description": {
+                "S": "Site is broken"
+            },
+            "ticketId": {
+                "S": "f3b5ba2b-f5f5-4af3-bbbe-0b1c5e8bada5"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "not provided"
+            },
+            "createdAt": {
+                "S": "2026-08-22T22:37:48.485681+00:00"
+            },
+            "stepsToReproduce": {
+                "S": "not provided"
+            },
+            "description": {
+                "S": "Checkout page crashes when clicking the Pay button"
+            },
+            "ticketId": {
+                "S": "282e42f7-76f8-44fd-89c6-03b7b95be6a1"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "not provided"
+            },
+            "createdAt": {
+                "S": "2026-08-22T22:38:01.276024+00:00"
+            },
+            "stepsToReproduce": {
+                "S": "not provided"
+            },
+            "description": {
+                "S": "Searching for anything returns a 500 error page on your site."
+            },
+            "ticketId": {
+                "S": "6509dc55-fcc0-454f-9f64-c9bb45d70ad4"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma on a MacBook Air."
+            },
+            "createdAt": {
+                "S": "2026-08-22T22:06:41.034890+00:00"
+            },
+            "stepsToReproduce": {
+                "S": "User did not provide specific steps to reproduce the issue."
+            },
+            "description": {
+                "S": "User reports site is broken in general."
+            },
+            "ticketId": {
+                "S": "09b6c7aa-dca3-4207-b79c-4f803a2f541f"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma"
+            },
+            "createdAt": {
+                "S": "2026-08-22T20:41:35.645829+00:00"
+            },
+            "stepsToReproduce": {
+                "S": "1. Add an item to the cart. 2. Go to checkout. 3. Click Pay."
+            },
+            "description": {
+                "S": "The checkout page crashes when I click the Pay button"
+            },
+            "ticketId": {
+                "S": "87d6f2c0-7d61-4154-8949-42c7aff62e9c"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma on a MacBook Air."
+            },
+            "createdAt": {
+                "S": "2026-08-22T20:46:46.507964+00:00"
+            },
+            "description": {
+                "S": "Checkout page crashes when clicking the Pay button"
+            },
+            "stepsToReproduce": {
+                "S": "Add a pair of headphones to the cart, go to checkout, fill in card details, click Pay, and the page goes white immediately."
+            },
+            "ticketId": {
+                "S": "5b5b1819-2734-4a10-932b-7700bfa479d4"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "not provided by customer"
+            },
+            "createdAt": {
+                "S": "2026-08-22T20:44:22.161891+00:00"
+            },
+            "description": {
+                "S": "Checkout page crashes when clicking the Pay button."
+            },
+            "stepsToReproduce": {
+                "S": "1. Navigate to the checkout page. 2. Click the Pay button."
+            },
+            "ticketId": {
+                "S": "7074e2a4-224a-4ece-8d23-9e5dc7e8be25"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "not provided by customer"
+            },
+            "createdAt": {
+                "S": "2026-08-22T22:07:30.420585+00:00"
+            },
+            "stepsToReproduce": {
+                "S": "not provided by customer"
+            },
+            "description": {
+                "S": "the button does nothing at all."
+            },
+            "ticketId": {
+                "S": "c3f3d8ab-4872-4aea-94b1-eb9c9599c85e"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma on a MacBook Air."
+            },
+            "createdAt": {
+                "S": "2026-08-22T20:46:16.459669+00:00"
+            },
+            "description": {
+                "S": "The checkout page crashes when clicking the Pay button."
+            },
+            "stepsToReproduce": {
+                "S": "Add a pair of headphones to the cart, go to checkout, fill in card details, click Pay, and the page goes white immediately."
+            },
+            "ticketId": {
+                "S": "a09a2c6f-0809-451d-b899-1e3a06d0c940"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma"
+            },
+            "createdAt": {
+                "S": "2026-08-22T21:31:54.845961+00:00"
+            },
+            "description": {
+                "S": "The checkout page crashes when I click the Pay button"
+            },
+            "stepsToReproduce": {
+                "S": "1. Add an item to the cart. 2. Go to checkout. 3. Click Pay."
+            },
+            "ticketId": {
+                "S": "a9b447a4-c750-446b-aea5-85f88448aa1d"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma"
+            },
+            "createdAt": {
+                "S": "2026-08-22T22:04:56.061622+00:00"
+            },
+            "stepsToReproduce": {
+                "S": "1. Add an item to the cart. 2. Go to checkout. 3. Click Pay."
+            },
+            "description": {
+                "S": "The checkout page crashes when I click the Pay button"
+            },
+            "ticketId": {
+                "S": "8bd51e1f-2ac4-4f64-b3c4-f17abeaf3557"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma"
+            },
+            "createdAt": {
+                "S": "2026-08-22T22:36:07.361321+00:00"
+            },
+            "description": {
+                "S": "The checkout page crashes when I click the Pay button"
+            },
+            "stepsToReproduce": {
+                "S": "1. Add an item to the cart. 2. Go to checkout. 3. Click Pay."
+            },
+            "ticketId": {
+                "S": "978f0bab-d7af-4b6f-91b8-69417ac553ff"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma on a MacBook Air."
+            },
+            "createdAt": {
+                "S": "2026-08-22T21:33:32.340894+00:00"
+            },
+            "description": {
+                "S": "The spinner goes forever and nothing happens when attempting to upload a profile photo."
+            },
+            "stepsToReproduce": {
+                "S": "Attempt to upload a profile photo."
+            },
+            "ticketId": {
+                "S": "6d2923e7-e04e-4b3d-805a-018c9f5f766a"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma, MacBook Air"
+            },
+            "createdAt": {
+                "S": "2026-08-22T22:37:28.480154+00:00"
+            },
+            "stepsToReproduce": {
+                "S": "Add a pair of headphones to the cart, go to checkout, fill in card details, and click Pay."
+            },
+            "description": {
+                "S": "The checkout page crashes when the Pay button is clicked."
+            },
+            "ticketId": {
+                "S": "34d2a56a-e9b4-479f-96df-dabe20486220"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Safari on an iPhone 14"
+            },
+            "createdAt": {
+                "S": "2026-08-22T22:06:46.997804+00:00"
+            },
+            "stepsToReproduce": {
+                "S": "Please provide the steps to reproduce the issue."
+            },
+            "description": {
+                "S": "Order history page shows a blank white screen."
+            },
+            "ticketId": {
+                "S": "22b3ad8b-52e8-412c-8b09-8883b4f6ee80"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "not provided by customer"
+            },
+            "createdAt": {
+                "S": "2026-08-22T20:44:27.564183+00:00"
+            },
+            "description": {
+                "S": "Checkout page crashes when clicking the Pay button."
+            },
+            "stepsToReproduce": {
+                "S": "1. Add a pair of headphones to the cart. 2. Go to checkout. 3. Fill in card details. 4. Click Pay. The page goes white straight away."
+            },
+            "ticketId": {
+                "S": "0a078831-624f-427f-854c-27e3cce9d59c"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma on a MacBook Air."
+            },
+            "createdAt": {
+                "S": "2026-08-22T20:46:55.940626+00:00"
+            },
+            "description": {
+                "S": "The checkout page crashes when clicking the Pay button."
+            },
+            "stepsToReproduce": {
+                "S": "Add a pair of headphones to the cart, go to checkout, fill in card details, click Pay, and the page goes white immediately."
+            },
+            "ticketId": {
+                "S": "1f8d32da-846c-4fdc-90d0-5d2902288940"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma on a MacBook Air."
+            },
+            "createdAt": {
+                "S": "2026-08-22T20:46:37.271866+00:00"
+            },
+            "description": {
+                "S": "The 'Add to Cart' button does nothing."
+            },
+            "stepsToReproduce": {
+                "S": "Navigate to the product page, select the desired product, and click the 'Add to Cart' button."
+            },
+            "ticketId": {
+                "S": "6877877b-19bb-440b-a2d2-e7ebae8e0f2a"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Safari on an iPhone 14"
+            },
+            "createdAt": {
+                "S": "2026-08-22T21:33:42.140214+00:00"
+            },
+            "description": {
+                "S": "The order history page shows a blank white screen."
+            },
+            "stepsToReproduce": {
+                "S": "Navigate to the order history page."
+            },
+            "ticketId": {
+                "S": "c4b9055d-8bcf-495a-ab26-3eb3815eb13c"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma on a MacBook Air."
+            },
+            "createdAt": {
+                "S": "2026-08-22T20:46:31.984212+00:00"
+            },
+            "description": {
+                "S": "Checkout page crashes when clicking the Pay button."
+            },
+            "stepsToReproduce": {
+                "S": "Add a pair of headphones to the cart, go to checkout, fill in card details, click Pay, and the page goes white immediately."
+            },
+            "ticketId": {
+                "S": "fcca12c5-e7b1-4550-b887-e6e5e929dd4c"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma on a MacBook Air."
+            },
+            "createdAt": {
+                "S": "2026-08-22T20:46:11.104922+00:00"
+            },
+            "stepsToReproduce": {
+                "S": "Attempt to upload a profile photo."
+            },
+            "description": {
+                "S": "The spinner goes forever when trying to upload a profile photo and nothing happens."
+            },
+            "ticketId": {
+                "S": "c914ab40-09b0-40a7-973e-6f0ecd73fc6d"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Safari on an iPhone 14."
+            },
+            "createdAt": {
+                "S": "2026-08-22T20:46:23.742230+00:00"
+            },
+            "description": {
+                "S": "The order history page shows a blank white screen."
+            },
+            "stepsToReproduce": {
+                "S": "Not provided by customer."
+            },
+            "ticketId": {
+                "S": "b4ee37e7-81dc-47bc-9f51-cecb20ab0339"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        },
+        {
+            "environment": {
+                "S": "Chrome 120 on macOS Sonoma on a MacBook Air."
+            },
+            "createdAt": {
+                "S": "2026-08-22T20:46:05.265173+00:00"
+            },
+            "description": {
+                "S": "Checkout page crashes when clicking the Pay button."
+            },
+            "stepsToReproduce": {
+                "S": "Add a pair of headphones to the cart, go to checkout, fill in card details, click Pay, and the page goes white immediately."
+            },
+            "ticketId": {
+                "S": "7866fea7-5078-4b39-8234-cd39ba81ee39"
+            },
+            "status": {
+                "S": "OPEN"
+            }
+        }
+    ],
+    "Count": 24,
+    "ScannedCount": 24,
+    "ConsumedCapacity": null
+}

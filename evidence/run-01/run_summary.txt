@@ -1,0 +1,14 @@
+Run summary
+===========
+account        : 212626318772
+region         : us-east-1
+caller         : arn:aws:iam::212626318772:root
+model          : us.amazon.nova-pro-v1:0
+judge          : amazon.nova-pro-v1:0
+harness        : arn:aws:bedrock-agentcore:us-east-1:212626318772:harness/support_chatbot-2Bj15XkvH7
+gateway        : arn:aws:bedrock-agentcore:us-east-1:212626318772:gateway/bug-report-tool-stack-gateway-stuq8vnpha
+gateway target : bugreports  -> bugreports___create_bug_report
+guardrail      : q4j8vcs1cvj9 v1
+lambda         : bug-report-tool-stack-create-bug-report
+table          : bug-report-tool-stack-bug-reports
+eval bucket    : udacity-agentic-engineer-c1-eval-212626318772

@@ -54,8 +54,8 @@ Every rubric line, where it is satisfied, and what proves it.
 |---|---|---|
 | Path defined in the system prompt, no separate agent resource | ✅ | `system_prompt.txt`, `--- BUG_REPORT ---` |
 | Harness invokes the Lambda tool through the AgentCore Gateway to persist the ticket | ✅ | Verified live: gateway `bug-report-tool-stack-gateway-stuq8vnpha`, target `bugreports`, tool `bugreports___create_bug_report` |
-| Collects description, steps to reproduce and environment **before** calling the tool | ⏳ | Run 1: called the tool on turn 1 with invented fields. Run 2: no premature call and no fabrication, but cross-session memory made it recall an older ticket and file nothing. Memory now disabled; run 3 confirms |
-| A record is created in `bug-report-tool-stack-bug-reports` | ✅ | 16 items after run 2, with all three fields matching what the customer said; `evidence/dynamodb_bug_reports.json` |
+| Collects description, steps to reproduce and environment **before** calling the tool | ✅ | **Run 4: `ALL 8 CHECKS PASSED`.** One question per turn, all three fields collected, exactly one tool call on turn 3, ticket ID relayed, DynamoDB item matching |
+| A record is created in `bug-report-tool-stack-bug-reports` | ✅ | 24 items after run 4; ticket `34d2a56a` has all three fields matching the scripted conversation |
 
 **Evidence**
 
@@ -121,7 +121,7 @@ Every rubric line, where it is satisfied, and what proves it.
 | `flow-tests.json` has ≥1 test per path | ✅ | [`flow-tests.json`](project/starter/flow-tests.json) — 21 cases: 6 bug, 9 platform, 6 hand-off. Also shipped as `harness-tests.json`, the name the current instructions use; a test asserts the two never diverge |
 | `generate-eval-dataset.py` produces a JSONL file | ✅ | Runs 1 and 2: 21 records each, all succeeded, **0 `[HARNESS_ERROR]`** |
 | JSONL uploaded to S3 and an evaluation job created | ✅ | Job `support-chatbot-eval-1787431707`, status **Completed**, bucket `udacity-agentic-engineer-c1-eval-212626318772` |
-| Correctness score close to 1 | ⏳ | **No trustworthy number yet.** Runs 2 and 3 reported 0.798 and 0.825, but both averaged across a shared S3 results prefix containing earlier runs (42 and 63 entries for a 21-case suite). Each job now writes to its own prefix; run 4 is the first clean measurement |
+| Correctness score close to 1 | ✅ | **Run 4: mean 0.952 over exactly 21 records** (20x 1.0, 1x 0.0). First measurement taken over a per-job results prefix with cross-session memory off |
 
 **Evidence**
 

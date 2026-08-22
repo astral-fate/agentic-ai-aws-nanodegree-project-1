@@ -423,20 +423,140 @@ inflates what the judge scores and plausibly explains part of the 0.5 band.
 
 ---
 
-# Run 4 — pending
+# Run 4 — the first clean measurement
 
-- [ ] Step 08 → memory actually disabled (`Memory setting is now: disabled`)
-- [ ] Step 09 → `ALL 8 CHECKS PASSED`, one tool call on turn 3
-- [ ] Step 11 → guardrail allows the FAQ question, blocks both attacks
-- [ ] Step 14 → correctness over exactly 21 entries
-- [ ] Exactly one new ticket per bug conversation
+| | |
+|---|---|
+| Job | `support-chatbot-eval-1787438418` · `evaluation-job/yyh0zozf68u5` |
+| Status | Completed · 12m 28s |
+| Records | 21 written, 21 succeeded, 0 `[HARNESS_ERROR]` |
+| **Correctness** | **mean 0.952 over exactly 21 records** — `{1.0: 20, 0.0: 1}` |
+
+The first run measured over its own results prefix, with cross-session memory
+off. Everything before this averaged several runs together.
+
+## The bug-report route works
+
+```
+you> Your checkout page crashes every single time I click the Pay button.
+bot> Sorry to hear you're experiencing this issue. Could you please describe
+     the exact steps you take that lead to the crash?
+
+you> I add a pair of headphones to the cart, go to checkout, fill in my card
+     details and then click Pay. The page goes white straight away.
+bot> Thanks for the details. On which device and browser does this happen?
+
+you> I'm using Chrome 120 on macOS Sonoma, on a MacBook Air.
+bot> [tool call] bugreports___create_bug_report
+     Thank you for the information. I have filed a bug report with ID
+     34d2a56a-e9b4-479f-96df-dabe20486220 and our engineering team will look
+     into this.
+```
+
+`ALL 8 CHECKS PASSED`. One question per turn, all three fields collected from
+the customer, exactly one tool call on the third turn, the real ticket ID
+relayed, and the stored item matching what was actually said:
+
+```
+description      : The checkout page crashes when the Pay button is clicked.
+stepsToReproduce : Add a pair of headphones to the cart, go to checkout,
+                   fill in card details, and click Pay.
+environment      : Chrome 120 on macOS Sonoma, MacBook Air
+status           : OPEN
+```
+
+This is the rubric row that had failed in every previous run. What fixed it
+was two changes working together: replacing a negative constraint with one
+that has a checkable trigger ("your first reply is always a question, never a
+tool call"), and turning off the cross-session memory that had been making the
+model believe it had already filed the ticket.
+
+## What the score means
+
+20 of 21 cases scored 1.0 and one scored 0.0 — no half marks at all, which
+suggests the judge found the responses either clearly right or clearly wrong
+rather than borderline. Identify the zero from the per-record results:
+
+```bash
+python - <<'EOF'
+import json, pathlib
+for f in pathlib.Path("eval-results").rglob("*.jsonl"):
+    for line in f.read_text().splitlines():
+        if not line.strip():
+            continue
+        r = json.loads(line)
+        def scores(o):
+            if isinstance(o, dict):
+                if o.get("metricName") and isinstance(o.get("result"), (int, float)):
+                    yield o["result"]
+                for v in o.values():
+                    yield from scores(v)
+            elif isinstance(o, list):
+                for v in o:
+                    yield from scores(v)
+        s = list(scores(r))
+        if s and min(s) < 1.0:
+            print(min(s), "|", str(r.get("prompt"))[:90])
+EOF
+```
+
+## Two defects found
+
+**1. The guardrail update failed — definition too long.**
+
+```
+ValidationException: One or more of your guardrail topic definitions
+exceeds the maximum allowed length.
+```
+
+Fixing the run-3 false positive by *lengthening* the `RefundAuthorization`
+definition to 499 characters ran into Bedrock's 200-character cap. Rewritten
+to 194 characters, keeping the exclusion but leaning on the examples to carry
+the rest. `setup_guardrail.py` now validates lengths **before** calling AWS,
+so this fails in a second locally instead of eleven minutes into a run.
+
+**2. The price-match hand-off regressed again.**
+
+```
+Sorry, I can't reveal future pricing or any pricing-related strategies.
+This is confidential business information that I can't disclose.
+```
+
+No phone number. It passed in run 3, so this route is not yet stable. The
+cause is a gap in the prompt's structure rather than the wording: the
+mandatory closing sentence lived only inside the OTHER block, and a refusal
+framed as *confidentiality* did not read to the model as an OTHER reply. The
+rule is now stated globally — every refusal, for any reason, is an OTHER reply
+and carries the number.
+
+The other four spot checks passed, including the off-topic and injection
+cases.
+
+## Still open
+
+- `<thinking>` appeared once more, on the tool-calling turn. Four runs, four
+  appearances, despite a by-name ban. This is Nova Pro behaviour that prompt
+  text does not suppress; stripping it would need post-processing in the
+  consumer.
+- One case scores 0.0. Worth identifying before submission, though 0.952 is
+  already "close to 1".
+
+---
+
+# Run 5 — pending
+
+- [ ] Step 11 → guardrail updates cleanly, FAQ question **ALLOWED**
+- [ ] Step 10 → price-match returns `1-800-555-0199`
+- [ ] Step 09 → `ALL 8 CHECKS PASSED` again (confirming run 4 was not luck)
+- [ ] Step 14 → correctness at or above 0.952
 
 ## Evidence to capture
 
-- [x] `bug_report_transcript.txt`
+- [x] `bug_report_transcript.txt` — the passing three-turn collection
 - [x] `output_eval_dataset.jsonl` — 21 records
 - [x] `harness-tests.json` / `flow-tests.json`
 - [x] `evidence.tar.gz`
+- [x] Correctness 0.952 over 21 records
 - [ ] Bedrock console → Evaluations → job results page
 - [ ] DynamoDB console → `bug-report-tool-stack-bug-reports`
 - [ ] Lambda console → test result

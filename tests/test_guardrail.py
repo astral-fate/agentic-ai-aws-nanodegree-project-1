@@ -181,12 +181,12 @@ def test_the_refund_topic_does_not_catch_policy_questions(starter_dir):
                   if t["name"] == "RefundAuthorization")
     definition = refund["definition"]
 
-    assert "does NOT cover ordinary questions about policy" in definition
-    for allowed in ("how returns work", "how long the return window is",
-                    "when a refund arrives", "who pays return shipping"):
+    assert "Excludes policy questions" in definition
+    for allowed in ("return windows", "refund timing", "return shipping"):
         assert allowed in definition, (
             f"the exclusion does not mention {allowed!r}"
         )
+    assert "must be allowed" in definition
 
 
 def test_the_denied_topics_are_well_formed(starter_dir):
@@ -208,3 +208,40 @@ def test_the_denied_topics_are_well_formed(starter_dir):
         assert len(keys) == len(set(keys)), f"duplicate key in {keys}"
         for required in ("name", "definition", "type"):
             assert required in keys, f"{required} missing from a denied topic"
+
+
+def test_topic_definitions_fit_the_bedrock_limit(starter_dir):
+    """Run 4: UpdateGuardrail rejected a 499-character definition with
+    "topic definitions exceeds the maximum allowed length". The limit is 200
+    characters, and the failure only surfaced eleven minutes into a run."""
+    for topic in _denied_topics(starter_dir):
+        length = len(topic["definition"])
+        assert length <= 200, (
+            f"{topic['name']} definition is {length} characters (limit 200)"
+        )
+
+
+def test_the_length_check_runs_before_any_aws_call(starter_dir):
+    """Fail locally in a second rather than mid-run."""
+    source = (starter_dir / "setup_guardrail.py").read_text(encoding="utf-8")
+
+    validate_at = source.index("validate_topics(DENIED_TOPICS)")
+    client_at = source.index('boto3.client("bedrock"')
+
+    assert validate_at < client_at, "validate before creating the client"
+
+
+def test_the_validator_rejects_an_overlong_definition(starter_dir):
+    import sys
+
+    sys.modules.pop("setup_guardrail", None)
+    module = _load_module(starter_dir / "setup_guardrail.py", "setup_guardrail")
+
+    with pytest.raises(SystemExit, match="too long"):
+        module.validate_topics([
+            {"name": "TooLong", "definition": "x" * 201, "type": "DENY"}
+        ])
+
+    module.validate_topics([
+        {"name": "Fine", "definition": "x" * 200, "type": "DENY"}
+    ])

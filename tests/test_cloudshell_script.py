@@ -341,6 +341,7 @@ def test_memory_is_scoped_before_any_test_runs(script):
 PASTES = [
     ("cloudshell/PASTE-THIS.txt", "cloudshell/run-all.sh"),
     ("cloudshell/PASTE-CREATE-USER.txt", "cloudshell/create-evidence-user.sh"),
+    ("cloudshell/PASTE-CREATE-FLOW.txt", "cloudshell/create-flow.sh"),
 ]
 
 
@@ -400,3 +401,20 @@ def test_the_user_script_can_clean_up_after_itself(request):
     assert "delete-access-key" in src
     assert "delete-user" in src
     assert "history -c" in src, "should tell the user to wipe the printed secret"
+
+
+def test_the_flow_script_carries_the_real_setup_flow(request):
+    """create-flow.sh embeds setup_flow.py so it is one paste. If the two
+    drift, CloudShell builds a different flow than the repo describes."""
+    embedded = _heredoc(
+        (request.config.rootpath / "cloudshell" / "create-flow.sh").read_text(encoding="utf-8"),
+        "SETUP_FLOW_PY",
+    )
+    real = (request.config.rootpath / "project" / "starter" / "setup_flow.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert embedded is not None, "no SETUP_FLOW_PY heredoc"
+    assert embedded.strip() == real.strip(), (
+        "cloudshell/create-flow.sh embeds a stale setup_flow.py"
+    )

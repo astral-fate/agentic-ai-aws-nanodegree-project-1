@@ -31,8 +31,10 @@ python3 sync-inline.py
 
 make_paste() {           # make_paste <script> <paste-file>
   local script="$1" out="$2"
-  if grep -q $'' "$script"; then
-    tr -d '' < "$script" > "$script.tmp" && mv "$script.tmp" "$script"
+  if grep -q $'
+' "$script"; then
+    tr -d '
+' < "$script" > "$script.tmp" && mv "$script.tmp" "$script"
   fi
   local hash
   hash="$(sha256sum "$script" | cut -d' ' -f1)"
@@ -56,3 +58,4 @@ make_paste() {           # make_paste <script> <paste-file>
 echo "Regenerated:"
 make_paste run-all.sh            PASTE-THIS.txt
 make_paste create-evidence-user.sh PASTE-CREATE-USER.txt
+make_paste create-flow.sh          PASTE-CREATE-FLOW.txt

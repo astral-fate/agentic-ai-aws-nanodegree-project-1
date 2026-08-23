@@ -1,0 +1,12 @@
+{
+  "jobArn": "arn:aws:bedrock:us-east-1:212626318772:evaluation-job/py9xv1r5279s",
+  "jobName": "support-chatbot-eval-1787488753",
+  "bucket": "udacity-agentic-engineer-c1-eval-212626318772",
+  "resultsUri": "s3://udacity-agentic-engineer-c1-eval-212626318772/results/support-chatbot-eval-1787488753/",
+  "resultsPrefix": "results/support-chatbot-eval-1787488753/",
+  "evaluatorModel": "amazon.nova-pro-v1:0",
+  "metrics": [
+    "Builtin.Correctness"
+  ],
+  "records": 21
+}

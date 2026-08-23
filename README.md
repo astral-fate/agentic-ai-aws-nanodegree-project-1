@@ -61,6 +61,40 @@ happened, and the fix.
 
 ---
 
+## Evidence at a glance
+
+Every rubric item with its artefact shown inline is in
+**[`evidence/README.md`](evidence/README.md)**. The headline pieces:
+
+### The full flow
+
+One classification step, three mutually exclusive paths, each ending at its
+own distinct output. This runs on the **AgentCore managed harness**, not
+Bedrock Flows, so the routing lives in `system_prompt.txt` rather than on a
+console canvas — the Project Overview says outright that there are no
+condition nodes or separate classifiers.
+
+![Full flow diagram](evidence/run-02/screenshots/06-flow-diagram.png)
+
+### Bedrock Evaluations — correctness 1.00
+
+![Bedrock evaluation report](evidence/run-02/screenshots/01b-evaluation-job-results.png)
+
+### Tickets the chatbot filed
+
+![DynamoDB bug reports](evidence/run-02/screenshots/02-dynamodb-bug-reports.png)
+
+### The classifier, the routing rules, and the embedded FAQ
+
+| | |
+|---|---|
+| [Classifier prompt](evidence/run-02/screenshots/07-classifier-prompt.png) | The `STEP 1 - CLASSIFY` block, verbatim |
+| [Condition expressions](evidence/run-02/screenshots/08-condition-expressions.png) | The routing rules and near-miss pairs |
+| [FAQ embedded in the prompt](evidence/run-02/screenshots/09-faq-embedded-in-prompt.png) | `{{FAQ}}` before and after substitution |
+| [Route responses](evidence/run-02/screenshots/10-faq-and-handoff-responses.png) | Covered · uncovered · other-request |
+
+---
+
 ## Run the whole thing on AWS in one command
 
 Open **AWS CloudShell** in **us-east-1** and paste the single line from

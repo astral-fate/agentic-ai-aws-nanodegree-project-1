@@ -25,3 +25,23 @@ equivalent test does run — the Lambda smoke test in the pipeline returns a
 
 **Nothing here is generated.** Each PNG is a real console page loaded in a
 browser. No API data was rendered into a console-lookalike page.
+
+## The four items the reviewer asked for
+
+Rendered from real project content by `scripts/render_evidence.py`. This
+project runs on the **AgentCore managed harness**, not Bedrock Flows, so
+there is no console canvas to screenshot — the Project Overview says outright
+that there are no condition nodes or separate classifiers. These show the same
+things as they are actually implemented.
+
+| File | Reviewer asked for | What it shows |
+|---|---|---|
+| `06-flow-diagram.png` | **Add the Full Flow Diagram** | The whole flow: one classification step, three mutually exclusive paths, each ending at its own distinct output |
+| `07-classifier-prompt.png` | **Show the Classifier Prompt** | The `STEP 1 - CLASSIFY` block, quoted verbatim from `system_prompt.txt` |
+| `08-condition-expressions.png` | **Show the Condition Expressions** | The routing rules, including the worked near-miss pairs that decide the ambiguous cases, plus what each branch does |
+| `09-faq-embedded-in-prompt.png` | **FAQ evidence** | The `{{FAQ}}` placeholder and the same region after `create_harness.py` substitutes the FAQ |
+| `10-faq-and-handoff-responses.png` | **FAQ evidence** | The chatbot's actual replies to a covered question, an uncovered question and an other-request message |
+
+These are **not** console screenshots and are not styled to look like any.
+Each carries a header naming the file it was rendered from. The genuine
+console screenshots are `01`–`05` above.

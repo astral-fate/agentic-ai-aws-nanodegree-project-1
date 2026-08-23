@@ -171,3 +171,60 @@ def test_the_report_route_is_the_one_that_actually_works(capture):
     report = next(t for t in targets if "report" in t["url"])
 
     assert "#/eval/model-evaluation/report?job=" in report["url"]
+
+
+# --- the reviewer-facing evidence images -----------------------------------
+#
+# Attempt 2 failed with: "Add the Full Flow Diagram / Show the Classifier
+# Prompt / Show the Condition Expressions / Add the Required FAQ Evidence
+# Screenshots". Links in a nested folder were not enough - the images have to
+# render on the page.
+
+
+def _embedded(md_rel: str) -> list[tuple[str, str]]:
+    import re
+    text = (REPO_ROOT / md_rel).read_text(encoding="utf-8")
+    return re.findall(r"!\[([^\]]*)\]\(([^)]+)\)", text)
+
+
+@pytest.mark.parametrize("md_rel", ["README.md", "evidence/README.md"])
+def test_every_embedded_image_resolves(md_rel):
+    """A broken image path renders as a blank box, which is worse than a link
+    because it looks like the evidence is missing."""
+    base = (REPO_ROOT / md_rel).parent
+    for alt, rel in _embedded(md_rel):
+        assert (base / rel).exists(), f"{md_rel} references a missing {rel}"
+        assert alt.strip(), f"{md_rel} embeds {rel} with no alt text"
+
+
+def test_the_four_reviewer_items_are_shown_inline():
+    """Not linked - embedded, so they render on the page itself."""
+    embedded = " ".join(rel for _, rel in _embedded("evidence/README.md"))
+
+    for name, what in [
+        ("06-flow-diagram", "the full flow diagram"),
+        ("07-classifier-prompt", "the classifier prompt"),
+        ("08-condition-expressions", "the condition expressions"),
+        ("09-faq-embedded-in-prompt", "the FAQ evidence"),
+        ("10-faq-and-handoff-responses", "the route responses"),
+    ]:
+        assert name in embedded, f"{what} ({name}) is not embedded inline"
+
+
+def test_the_landing_page_shows_the_headline_evidence():
+    """A reviewer who opens the repo and reads no further should still see
+    the flow and the score."""
+    embedded = " ".join(rel for _, rel in _embedded("README.md"))
+
+    assert "06-flow-diagram" in embedded
+    assert "01b-evaluation-job-results" in embedded
+
+
+def test_rendered_images_are_not_dressed_up_as_the_console():
+    """They present real prompt text and real replies. Styling them to look
+    like an AWS console screenshot would make them fabricated records."""
+    source = (SCRIPTS / "render_evidence.py").read_text(encoding="utf-8")
+
+    assert "None of them imitate the AWS console" in source
+    # Each page must name the file it was rendered from.
+    assert "class='src'" in source or 'class="src"' in source

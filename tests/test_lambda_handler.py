@@ -147,3 +147,73 @@ def test_the_console_test_event_from_the_instructions_works(
 
     assert set(result) == {"ticketId", "status"}
     assert result["status"] == "OPEN"
+
+
+# --- placeholder rejection -------------------------------------------------
+#
+# A live run filed this ticket on the FIRST turn, having asked nothing:
+#
+#     description      : Checkout page crashes when clicking the Pay button
+#     stepsToReproduce : not provided
+#     environment      : not provided
+#
+# Told not to invent values, the model reached for a placeholder instead. The
+# result is still a ticket engineering cannot act on, so the tool refuses it
+# rather than leaving the prompt as the only line of defence.
+
+
+@pytest.mark.parametrize("value", [
+    "not provided", "Not Provided", "not provided by customer",
+    "not specified", "unknown", "N/A", "n/a", "none", "-", "TBD",
+    "not sure", "did not provide", "not provided.",
+])
+def test_placeholder_values_are_rejected(lambda_module, fake_table, value):
+    event = dict(GOOD_EVENT, stepsToReproduce=value)
+
+    result = lambda_module.lambda_handler(event, FakeLambdaContext())
+
+    assert "placeholder" in result["error"]
+    assert "stepsToReproduce" in result["error"]
+    assert fake_table.items == [], "a placeholder ticket was filed"
+
+
+def test_the_exact_live_failure_is_rejected(lambda_module, fake_table):
+    event = {
+        "description": "Checkout page crashes when clicking the Pay button",
+        "stepsToReproduce": "not provided",
+        "environment": "not provided",
+    }
+
+    result = lambda_module.lambda_handler(event, FakeLambdaContext())
+
+    assert "placeholder" in result["error"]
+    for field in ("stepsToReproduce", "environment"):
+        assert field in result["error"]
+    assert fake_table.items == []
+
+
+def test_a_real_answer_containing_a_placeholder_word_is_kept(
+    lambda_module, fake_table
+):
+    """Matching is on the whole trimmed field, so genuine prose survives."""
+    event = dict(
+        GOOD_EVENT,
+        description="An unknown error appears when I click Pay",
+        environment="Chrome on an unknown Windows build, probably 11",
+    )
+
+    result = lambda_module.lambda_handler(event, FakeLambdaContext())
+
+    assert result["status"] == "OPEN"
+    assert len(fake_table.items) == 1
+
+
+def test_blank_and_placeholder_are_reported_together(lambda_module, fake_table):
+    event = {"description": "The page crashes", "stepsToReproduce": "",
+             "environment": "unknown"}
+
+    result = lambda_module.lambda_handler(event, FakeLambdaContext())
+
+    assert "missing required field(s): stepsToReproduce" in result["error"]
+    assert "placeholder value(s) in: environment" in result["error"]
+    assert fake_table.items == []

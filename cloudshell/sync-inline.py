@@ -36,6 +36,11 @@ END = "# <<< END INLINED DELIVERABLES"
 # Files run-all.sh writes into project/starter before it runs anything.
 # Order matters only for the progress output.
 INLINED = [
+    # The Lambda and its CloudFormation template are cloned from the Udacity
+    # starter repo, so edits here would never reach a CloudShell run unless
+    # they are inlined too. The placeholder-rejection fix lives in both.
+    "cloudformation-tool.yaml",
+    "create_bug_report.py",
     "system_prompt.txt",       # the deliverable
     "harness-tests.json",      # the evaluation suite
     "scripted_bug_report.py",  # live multi-turn check + DynamoDB verification

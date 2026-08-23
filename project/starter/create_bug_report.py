@@ -43,6 +43,22 @@ def _tool_name(context):
     return name.split("___")[-1] if "___" in name else name
 
 
+# Values that look filled in but carry no information. Matched on the whole
+# trimmed field, so a real answer that happens to contain "unknown" (for
+# example "an unknown error appears") is untouched.
+_PLACEHOLDERS = {
+    "not provided", "not provided by customer", "not specified", "not given",
+    "not available", "not applicable", "unknown", "unspecified", "none",
+    "n/a", "na", "-", "--", "tbd", "no steps", "no environment",
+    "not sure", "unsure", "customer did not provide", "did not provide",
+}
+
+
+def _is_placeholder(value):
+    normalised = value.strip().strip(".").strip().lower()
+    return normalised in _PLACEHOLDERS
+
+
 def lambda_handler(event, context):
     # The gateway sends the tool arguments directly as the event.
     # Keep this print: it shows the exact event shape in CloudWatch
@@ -68,8 +84,25 @@ def lambda_handler(event, context):
     missing = [name for name, value in [("description", description),
                                         ("stepsToReproduce", steps),
                                         ("environment", environment)] if not value]
-    if missing:
-        return {"error": "missing required field(s): " + ", ".join(missing)
+
+    # A blank field is not the only way to file an empty ticket. Told not to
+    # invent values, the model's next move is a placeholder - a live run
+    # produced a ticket whose stepsToReproduce and environment were both
+    # "not provided", filed on the first turn without asking anything. That
+    # is still a ticket engineering cannot act on, so the tool refuses it
+    # here rather than relying on the prompt to hold.
+    placeholder = [name for name, value in [("description", description),
+                                            ("stepsToReproduce", steps),
+                                            ("environment", environment)]
+                   if value and _is_placeholder(value)]
+
+    if missing or placeholder:
+        parts = []
+        if missing:
+            parts.append("missing required field(s): " + ", ".join(missing))
+        if placeholder:
+            parts.append("placeholder value(s) in: " + ", ".join(placeholder))
+        return {"error": "; ".join(parts)
                          + ". Ask the customer for them before filing the ticket."}
 
     ticket_id = str(uuid.uuid4())

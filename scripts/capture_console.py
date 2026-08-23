@@ -54,10 +54,17 @@ def build_targets(region: str, cfg: dict, job: dict) -> list[dict]:
     targets = [
         {
             "name": "01-bedrock-evaluations",
-            "url": console(region, f"bedrock/home?region={region}#/evaluations"),
-            "note": "Bedrock → Evaluations. Open your job from this list; the "
-                    "job page itself needs one click.",
-            "wait": 6000,
+            # The route is "#evaluation" - no slash, singular. "#/evaluations"
+            # renders literally nothing, which is how the first attempt
+            # produced a blank page under a correct-looking header.
+            "url": console(region, f"bedrock/home?region={region}#evaluation"),
+            "note": "Bedrock → Evaluations.",
+            "wait": 15000,
+            # This view took about a minute to paint in testing, so wait for
+            # the job name rather than guessing a sleep.
+            "expect": "support-chatbot-eval",
+            "attempts": 16,
+            "warm_url": console(region, f"bedrock/home?region={region}"),
         },
         {
             "name": "02-dynamodb-bug-reports",
@@ -65,33 +72,51 @@ def build_targets(region: str, cfg: dict, job: dict) -> list[dict]:
                            f"dynamodbv2/home?region={region}"
                            f"#item-explorer?table={table}"),
             "note": f"DynamoDB → {table} → Explore items.",
-            "wait": 8000,
+            "wait": 10000,
+            "expect": "ticketId",
+            "attempts": 12,
         },
         {
             "name": "03-lambda-create-bug-report",
+            # The Test tab needs a click to show a result, which is not
+            # something this can do honestly. The Code tab proves the
+            # function and its handler; the CloudWatch target below carries
+            # the actual invocation evidence.
             "url": console(region,
-                           f"lambda/home?region={region}#/functions/{fn}?tab=testing"),
-            "note": "Lambda → the create_bug_report function → Test tab.",
-            "wait": 8000,
+                           f"lambda/home?region={region}#/functions/{fn}?tab=code"),
+            "note": "Lambda → the create_bug_report function.",
+            "wait": 12000,
+            "expect": "Code source",
+            "attempts": 12,
+            "warm_url": console(region, f"lambda/home?region={region}#/functions"),
         },
         {
             "name": "04-lambda-cloudwatch-logs",
             "url": console(region,
                            f"cloudwatch/home?region={region}"
                            f"#logsV2:log-groups/log-group/{log_group}"),
-            "note": "CloudWatch log group for the Lambda — shows the real "
-                    "events the gateway delivered.",
-            "wait": 8000,
+            "note": "CloudWatch log group for the Lambda — the real "
+                    "invocations, which is stronger evidence than a console "
+                    "test click.",
+            "wait": 12000,
+            # "Log streams" is not the wording this view uses; match the log
+            # group name itself, which is unambiguous.
+            "expect": "create-bug-report",
+            "attempts": 14,
+            "warm_url": console(region,
+                                f"cloudwatch/home?region={region}#logsV2:log-groups"),
         },
         {
             "name": "05-cloudformation-stacks",
             "url": console(region, f"cloudformation/home?region={region}#/stacks"),
             "note": "Both stacks, CREATE_COMPLETE.",
-            "wait": 6000,
+            "wait": 8000,
+            "expect": "bug-report-tool-stack",
+            "attempts": 10,
         },
     ]
 
-    if job.get("jobArn"):
+    if False and job.get("jobArn"):  # detail route shape unknown; list page suffices
         # The evaluations console keys off the job ARN. Included as a best
         # effort: if the fragment shape changes, the list page above still
         # gives you a screenshot to work from.
@@ -109,6 +134,53 @@ def build_targets(region: str, cfg: dict, job: dict) -> list[dict]:
 
 def is_signin(page) -> bool:
     return any(h in page.url for h in SIGNIN_HOSTS)
+
+
+# The AWS console shell (nav bar, search, footer) renders immediately and
+# contributes roughly this much text. Anything at or below it means the page
+# body itself has not painted yet — a screenshot taken then is a blank frame
+# under a correct-looking header, which is worse than an obvious failure
+# because it looks plausible.
+SHELL_TEXT_CHARS = 700
+
+
+def body_text_length(page) -> int:
+    try:
+        return page.evaluate("() => (document.body?.innerText || '').length")
+    except Exception:  # noqa: BLE001 - page may be mid-navigation
+        return 0
+
+
+def settle(page, initial_wait: int, attempts: int = 4, expect: str = "") -> int:
+    """Wait for the console SPA to actually paint something.
+
+    These are single-page apps behind a fragment router: DOMContentLoaded
+    fires long before any content exists. Poll the rendered text instead of
+    trusting a fixed sleep.
+    """
+    page.wait_for_timeout(initial_wait)
+    try:
+        page.wait_for_load_state("networkidle", timeout=20000)
+    except PWTimeout:
+        pass  # some console pages poll forever and never go idle
+
+    def ready() -> tuple[int, bool]:
+        try:
+            text = page.evaluate("() => document.body?.innerText || ''")
+        except Exception:  # noqa: BLE001
+            return 0, False
+        enough = len(text) > SHELL_TEXT_CHARS
+        if expect:
+            enough = enough and expect in text
+        return len(text), enough
+
+    length, done = ready()
+    for _ in range(attempts):
+        if done:
+            return length
+        page.wait_for_timeout(5000)
+        length, done = ready()
+    return length if done else min(length, SHELL_TEXT_CHARS)
 
 
 def main() -> int:
@@ -149,7 +221,7 @@ def main() -> int:
     print(f"  profile : {profile}")
     print(f"  mode    : {'headless' if headless else 'visible window'}")
 
-    captured, failed = [], []
+    captured, failed, blank = [], [], []
 
     with sync_playwright() as pw:
         try:
@@ -207,18 +279,40 @@ def main() -> int:
             name = t["name"]
             print(f"\n  {name}")
             try:
-                page.goto(t["url"], wait_until="domcontentloaded", timeout=60000)
-                page.wait_for_timeout(t.get("wait", 6000))
+                # Some console sections have moved between fragment routes.
+                # Try each candidate and keep the first that actually paints.
+                urls = [t["url"], *t.get("alt_urls", [])]
+                length = 0
+                if t.get("warm_url"):
+                    # Prime the service bundle before the fragment route.
+                    page.goto(t["warm_url"], wait_until="commit", timeout=90000)
+                    settle(page, 8000, attempts=6)
 
-                if is_signin(page):
-                    raise RuntimeError("bounced to the sign-in page")
+                for i, url in enumerate(urls):
+                    page.goto(url, wait_until="commit", timeout=90000)
+                    if is_signin(page):
+                        raise RuntimeError("bounced to the sign-in page")
+                    length = settle(page, t.get("wait", 6000),
+                                    attempts=t.get("attempts", 4),
+                                    expect=t.get("expect", ""))
+                    if length > SHELL_TEXT_CHARS:
+                        break
+                    if i + 1 < len(urls):
+                        print(f"    blank ({length} chars) - trying the next route")
 
                 path = out / f"{name}.png"
                 page.screenshot(path=str(path), full_page=True)
                 size = path.stat().st_size
-                print(f"    saved {path} ({size:,} bytes)")
-                captured.append({"name": name, "file": path.name,
-                                 "url": t["url"], "note": t["note"]})
+
+                if length <= SHELL_TEXT_CHARS:
+                    # Say so rather than filing a blank frame as evidence.
+                    print(f"    BLANK: only {length} chars rendered "
+                          f"({size:,} bytes) - not usable as evidence")
+                    blank.append(name)
+                else:
+                    print(f"    saved {path} ({size:,} bytes, {length} chars)")
+                    captured.append({"name": name, "file": path.name,
+                                     "url": page.url, "note": t["note"]})
             except Exception as exc:  # noqa: BLE001
                 level = "optional" if t.get("optional") else "FAILED"
                 print(f"    {level}: {exc}")

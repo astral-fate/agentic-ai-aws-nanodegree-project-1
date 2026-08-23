@@ -48,14 +48,37 @@ def test_the_deep_links_use_the_real_resource_names(capture):
     assert "bug-report-tool-stack-create-bug-report" in urls
 
 
-def test_the_evaluation_job_link_is_optional(capture):
-    """The Bedrock console's job-detail fragment is not a documented URL
-    shape. If it stops resolving, the run must still produce the other
-    screenshots rather than failing outright."""
+def test_the_bedrock_route_has_no_slash(capture):
+    """`#/evaluations` renders literally nothing — the console route is
+    `#evaluation`, singular and without a slash. The wrong one produced a
+    blank page under a correct-looking AWS header, which is the worst kind of
+    failure because it looks like valid evidence."""
     targets = capture.build_targets("us-east-1", CONFIG, JOB)
-    job_target = next(t for t in targets if "evaluation-job" in t["url"])
+    bedrock = next(t for t in targets if "bedrock" in t["url"])
 
-    assert job_target.get("optional") is True
+    assert bedrock["url"].endswith("#evaluation")
+    assert "#/evaluations" not in bedrock["url"]
+
+
+def test_slow_console_pages_wait_for_their_own_content(capture):
+    """A fixed sleep is not enough: the Bedrock evaluations view took about a
+    minute to paint. Each slow target names text that only exists once the
+    page is really rendered."""
+    targets = capture.build_targets("us-east-1", CONFIG, JOB)
+    by_name = {t["name"]: t for t in targets}
+
+    assert by_name["01-bedrock-evaluations"]["expect"] == "support-chatbot-eval"
+    assert by_name["02-dynamodb-bug-reports"]["expect"] == "ticketId"
+    assert by_name["05-cloudformation-stacks"]["expect"] == "bug-report-tool-stack"
+
+
+def test_heavy_console_bundles_are_warmed_first(capture):
+    """On a cold browser profile the Bedrock evaluations view never painted.
+    Loading the service root first lets the bundle cache."""
+    targets = capture.build_targets("us-east-1", CONFIG, JOB)
+    bedrock = next(t for t in targets if "bedrock" in t["url"])
+
+    assert bedrock.get("warm_url"), "no warm-up navigation for Bedrock"
 
 
 def test_it_works_without_a_config_or_job_file(capture):

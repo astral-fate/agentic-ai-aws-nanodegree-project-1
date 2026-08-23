@@ -41,7 +41,9 @@ if [ "${1:-}" = "--delete" ]; then
     ok "deleted key $k"
   done
   aws iam delete-login-profile --user-name "$IAM_USER" 2>/dev/null && ok "console password removed" || true
-  aws iam delete-user-policy --user-name "$IAM_USER" --policy-name AllowConsoleFederation 2>/dev/null || true
+  for pol in AllowConsoleFederation AllowEvidenceUpload; do
+    aws iam delete-user-policy --user-name "$IAM_USER" --policy-name "$pol" 2>/dev/null || true
+  done
   aws iam detach-user-policy --user-name "$IAM_USER" \
     --policy-arn arn:aws:iam::aws:policy/ReadOnlyAccess 2>/dev/null || true
   aws iam delete-user --user-name "$IAM_USER" && ok "user deleted"
@@ -89,6 +91,20 @@ aws iam put-user-policy --user-name "$IAM_USER" \
     }]
   }'
 ok "sts:GetFederationToken allowed"
+
+# The screenshots are uploaded next to the evaluation results. This is the
+# only write the user gets: PutObject, on the evidence/ prefix of the
+# evaluation bucket, and nothing else.
+aws iam put-user-policy --user-name "$IAM_USER"   --policy-name AllowEvidenceUpload   --policy-document "{
+    \"Version\": \"2012-10-17\",
+    \"Statement\": [{
+      \"Sid\": \"UploadScreenshots\",
+      \"Effect\": \"Allow\",
+      \"Action\": \"s3:PutObject\",
+      \"Resource\": \"arn:aws:s3:::udacity-agentic-engineer-c1-eval-${ACCOUNT}/evidence/*\"
+    }]
+  }"
+ok "s3:PutObject allowed on the evidence/ prefix only"
 
 # --------------------------------------------------------------- console ----
 if [ "$WANT_CONSOLE" = "1" ]; then

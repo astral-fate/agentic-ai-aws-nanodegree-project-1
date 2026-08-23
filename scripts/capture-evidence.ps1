@@ -69,6 +69,61 @@ function Ok($m)   { Write-Host "  [ok] $m"   -ForegroundColor Green }
 function Warn($m) { Write-Host "  [!]  $m"   -ForegroundColor Yellow }
 function Die($m)  { Write-Host "`n[x] $m"    -ForegroundColor Red; exit 1 }
 
+# ------------------------------------------------------------------ .env ----
+# Load credentials from the git-ignored .env so the secret never has to be
+# pasted into a terminal (where it lands in PSReadLine history).
+#
+# EVIDENCE_AWS_* is mapped into AWS_* for this process only. They are kept
+# under a separate name in .env because the evidence-capture user is
+# read-only: putting a read-only key in the generic AWS_ACCESS_KEY_ID slot
+# would make run-all.sh fail with a confusing permissions error.
+function Import-DotEnv {
+    param([string]$Path)
+    if (-not (Test-Path $Path)) { return @{} }
+    $vars = @{}
+    foreach ($line in Get-Content $Path) {
+        if ($line -match '^\s*#') { continue }
+        if ($line -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$') {
+            $k = $matches[1]; $v = $matches[2].Trim().Trim('"').Trim("'")
+            if ($v) { $vars[$k] = $v }
+        }
+    }
+    return $vars
+}
+
+Step "Credentials"
+
+$envFile = Join-Path $repo ".env"
+$dotenv  = Import-DotEnv $envFile
+
+if ($dotenv.Count -gt 0) { Ok ".env loaded ($($dotenv.Count) values)" }
+else { Warn "no .env found at $envFile" }
+
+if (-not $env:AWS_ACCESS_KEY_ID -and $dotenv.ContainsKey("EVIDENCE_AWS_ACCESS_KEY_ID")) {
+    $env:AWS_ACCESS_KEY_ID     = $dotenv["EVIDENCE_AWS_ACCESS_KEY_ID"]
+    $env:AWS_SECRET_ACCESS_KEY = $dotenv["EVIDENCE_AWS_SECRET_ACCESS_KEY"]
+    $env:AWS_SESSION_TOKEN     = $null
+    $masked = $env:AWS_ACCESS_KEY_ID.Substring(0, 8) + "..." +
+              $env:AWS_ACCESS_KEY_ID.Substring($env:AWS_ACCESS_KEY_ID.Length - 4)
+    Ok "using EVIDENCE_AWS_* from .env ($masked)"
+    # These are read-only credentials, so federated sign-in is the only mode
+    # that can work with them.
+    if (-not $Federated) {
+        Write-Host "  (they are read-only, so -Federated is implied)" -ForegroundColor DarkGray
+        $Federated = $true
+    }
+} elseif ($env:AWS_ACCESS_KEY_ID) {
+    Ok "using AWS_ACCESS_KEY_ID already set in this shell"
+}
+
+if ($dotenv.ContainsKey("EVIDENCE_AWS_REGION") -and -not $PSBoundParameters.ContainsKey("Region")) {
+    $Region = $dotenv["EVIDENCE_AWS_REGION"]
+}
+if ($dotenv.ContainsKey("EVIDENCE_IAM_USER") -and -not $PSBoundParameters.ContainsKey("IamUser")) {
+    $IamUser = $dotenv["EVIDENCE_IAM_USER"]
+}
+Ok "region $Region"
+
 # ----------------------------------------------------------- prerequisites --
 Step "Prerequisites"
 

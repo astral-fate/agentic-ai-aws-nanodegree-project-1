@@ -54,7 +54,7 @@ Every rubric line, where it is satisfied, and what proves it.
 |---|---|---|
 | Path defined in the system prompt, no separate agent resource | ✅ | `system_prompt.txt`, `--- BUG_REPORT ---` |
 | Harness invokes the Lambda tool through the AgentCore Gateway to persist the ticket | ✅ | Verified live: gateway `bug-report-tool-stack-gateway-stuq8vnpha`, target `bugreports`, tool `bugreports___create_bug_report` |
-| Collects description, steps to reproduce and environment **before** calling the tool | ✅ | **Run 4: `ALL 8 CHECKS PASSED`.** One question per turn, all three fields collected, exactly one tool call on turn 3, ticket ID relayed, DynamoDB item matching |
+| Collects description, steps to reproduce and environment **before** calling the tool | ✅ | **Run 6: `ALL 8 CHECKS PASSED`** — one question per turn, one tool call on turn 3, stored item matching what the customer said |
 | A record is created in `bug-report-tool-stack-bug-reports` | ✅ | 24 items after run 4; ticket `34d2a56a` has all three fields matching the scripted conversation |
 
 **Evidence**
@@ -75,28 +75,28 @@ Every rubric line, where it is satisfied, and what proves it.
   > to regenerate it**, or screenshot the terminal output instead.
 - 📸 DynamoDB console → `bug-report-tool-stack-bug-reports` → **Explore items**.
 
-> ### ⚠️ The one open item
+> ### How this row was earned
 >
-> **Run 1:** called `create_bug_report` on turn 1 with only a description,
-> inventing the steps and environment, then filed a duplicate on turn 2.
+> It took six live runs, and each failure was a different way of getting past
+> the same gate:
 >
-> **Run 2:** the prompt fix worked — no premature call, no fabrication, no
-> duplicate. But it filed *nothing*, replying that a report "has already been
-> filed" and quoting a ticket from an **earlier run in a different session**.
-> The cause was not the prompt: an AgentCore harness is created with managed
-> **long-term memory enabled by default**, so it genuinely remembered, and the
-> new "never file twice" rule correctly stopped it. Two right behaviours, one
-> wrong outcome.
+> | Run | Failure |
+> |---|---|
+> | 1 | Called the tool on turn 1, **inventing** the steps and environment, then filed a duplicate on turn 2 |
+> | 2 | No premature call — but cross-session memory made it recall an old ticket and file nothing |
+> | 3 | Same, because the memory fix used the wrong API shape |
+> | 4 | **Passed** |
+> | 5 | Filed on turn 1 with `not provided` in both fields |
+> | 6 | **Passed**, and every stored field matches what the customer said |
 >
-> `disable_memory.py` now sets `memory={"disabled": {}}` before any test runs.
-> Within-conversation state is untouched; only cross-session recall is off.
+> Run 5 is the instructive one: the placeholder came from an escape-hatch rule
+> I had written into the prompt myself, meant to stop a questioning loop. The
+> model used it as a shortcut past the gate.
 >
-> Encouragingly, the ticket it recalled was **perfect** — description, steps
-> and environment all matching the scripted customer. The collection logic
-> works; session isolation did not.
->
-> **Run 3 must print `ALL 8 CHECKS PASSED` at step 08 before you submit.**
-> Full analysis in [`docs/EVALUATION.md`](docs/EVALUATION.md).
+> What made it stick was moving the check **out of the prompt**.
+> `create_bug_report` now rejects placeholder values, so a ticket full of
+> "not provided" cannot be filed at all. Prompt text had failed four different
+> ways by then; the tool boundary does not negotiate.
 
 ---
 

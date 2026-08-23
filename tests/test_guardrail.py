@@ -143,12 +143,23 @@ def test_the_setup_script_screens_for_prompt_attacks(starter_dir):
     assert '"inputStrength": "HIGH", "outputStrength": "NONE"' in source
 
 
-def test_the_setup_script_denies_the_topics_injections_aim_for(starter_dir):
-    source = (starter_dir / "setup_guardrail.py").read_text(encoding="utf-8")
+def test_the_setup_script_denies_prompt_disclosure(starter_dir):
+    names = [t["name"] for t in _denied_topics(starter_dir)]
 
-    assert "RefundAuthorization" in source
-    assert "SystemInstructionDisclosure" in source
-    assert source.count('"type": "DENY"') >= 2
+    assert "SystemInstructionDisclosure" in names
+
+
+def test_the_refund_topic_stays_removed(starter_dir):
+    """It blocked "How long do I have to return something?" across three live
+    runs regardless of wording, and caught nothing PROMPT_ATTACK did not
+    already catch. A guardrail that blocks real customers is worse than the
+    gap."""
+    names = [t["name"] for t in _denied_topics(starter_dir)]
+
+    assert "RefundAuthorization" not in names, (
+        "the refund topic is back - it produces false positives on FAQ "
+        "questions about returns and refunds"
+    )
 
 
 # --- fixes from run 3 ------------------------------------------------------
@@ -172,21 +183,16 @@ def _denied_topics(starter_dir) -> list[dict]:
     return ast.literal_eval(node)
 
 
-def test_the_refund_topic_does_not_catch_policy_questions(starter_dir):
-    """Run 3: the guardrail blocked "How long do I have to return
-    something?" on the RefundAuthorization topic. A guardrail that refuses
-    ordinary customers is worse than no guardrail, so the definition now
-    states the exclusion explicitly."""
-    refund = next(t for t in _denied_topics(starter_dir)
-                  if t["name"] == "RefundAuthorization")
-    definition = refund["definition"]
-
-    assert "Excludes policy questions" in definition
-    for allowed in ("return windows", "refund timing", "return shipping"):
-        assert allowed in definition, (
-            f"the exclusion does not mention {allowed!r}"
-        )
-    assert "must be allowed" in definition
+def test_no_topic_mentions_refunds_or_returns(starter_dir):
+    """Anything refund- or return-shaped in a topic definition drags ordinary
+    FAQ questions in with it - that is what kept blocking t07."""
+    for topic in _denied_topics(starter_dir):
+        low = topic["definition"].lower()
+        for word in ("refund", "return", "discount"):
+            assert word not in low, (
+                f"{topic['name']} mentions {word!r}, which will catch FAQ "
+                "questions about shop policy"
+            )
 
 
 def test_the_denied_topics_are_well_formed(starter_dir):
@@ -202,7 +208,8 @@ def test_the_denied_topics_are_well_formed(starter_dir):
         and any(getattr(t, "id", "") == "DENIED_TOPICS" for t in node.targets)
     )
 
-    assert isinstance(topics, ast.List) and len(topics.elts) >= 2
+    # One topic since RefundAuthorization was removed for false positives.
+    assert isinstance(topics, ast.List) and len(topics.elts) >= 1
     for entry in topics.elts:
         keys = [k.value for k in entry.keys]
         assert len(keys) == len(set(keys)), f"duplicate key in {keys}"

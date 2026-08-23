@@ -19,12 +19,12 @@ not in condition nodes or a separate classifier.
 
 | | |
 |---|---|
-| Offline test suite | **130 tests, all passing** — `python -m pytest` |
+| Offline test suite | **169 tests, all passing** — `python -m pytest` |
 | AWS deployment | ✅ deployed and verified end to end in `us-east-1` |
-| Bug-report route | ✅ **`ALL 8 CHECKS PASSED`** (run 4) |
-| FAQ + hand-off routes | ✅ 4 of 5 spot checks — price-match hand-off still flaky |
-| **Bedrock Evaluations** | ✅ **mean correctness 0.952** over 21 records (20× 1.0, 1× 0.0) |
-| Guardrail | Blocks injection and prompt extraction; one length fix pending |
+| Bug-report route | ✅ **`ALL 8 CHECKS PASSED`** (run 6) |
+| FAQ + hand-off routes | ✅ **all 5 spot checks pass** |
+| **Bedrock Evaluations** | ✅ **mean correctness 1.000** over 21 records (21× 1.0) |
+| Guardrail | ✅ blocks injection and prompt extraction, no false positives |
 | Evidence | [`evidence/run-01/`](evidence/run-01/) — needs screenshots |
 
 ### The run that mattered

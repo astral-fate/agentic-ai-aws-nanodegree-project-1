@@ -613,20 +613,107 @@ cases.
 
 ---
 
-# Run 5 — pending
+# Run 6 — the project working
 
-- [ ] Step 11 → guardrail updates cleanly, FAQ question **ALLOWED**
-- [ ] Step 10 → price-match returns `1-800-555-0199`
-- [ ] Step 09 → `ALL 8 CHECKS PASSED` again (confirming run 4 was not luck)
-- [ ] Step 14 → correctness at or above 0.952
+| | |
+|---|---|
+| Job | `support-chatbot-eval-1787488753` · `evaluation-job/py9xv1r5279s` |
+| Status | Completed · 12m 52s |
+| Records | 21 written, 21 succeeded, 0 `[HARNESS_ERROR]` |
+| **Correctness** | **1.000 over 21 records** — `{1.0: 21}` |
+
+Every case scored 1.0. No half marks, no zeros.
+
+## The bug-report route
+
+```
+you> Your checkout page crashes every single time I click the Pay button.
+bot> I'm sorry to hear you're experiencing this issue. Could you please
+     describe the steps you took that led to the crash?
+
+you> I add a pair of headphones to the cart, go to checkout, fill in my card
+     details and then click Pay. The page goes white straight away.
+bot> Thank you for providing the steps. To help resolve this, could you
+     please let me know which browser and device you are using?
+
+you> I'm using Chrome 120 on macOS Sonoma, on a MacBook Air.
+bot> [tool call] bugreports___create_bug_report
+     The bug has been successfully reported with ticket ID 2dd5cc3c-...
+```
+
+`ALL 8 CHECKS PASSED`, and the stored item carries what the customer actually
+said rather than a placeholder or an invention:
+
+```
+description      : Checkout page crashes when clicking the Pay button.
+stepsToReproduce : Add a pair of headphones to the cart, go to checkout,
+                   fill in card details, and click Pay. The page goes white
+                   immediately.
+environment      : Chrome 120 on macOS Sonoma, MacBook Air.
+```
+
+## What fixed it
+
+Two changes between run 5 and run 6, and the second is the one that matters.
+
+Run 5 filed on turn 1 with `stepsToReproduce: not provided`. The cause was a
+rule I had written into the prompt myself — an escape hatch letting the model
+write "not provided by customer" after asking twice, meant to stop a
+questioning loop. Nova used it as a way past the gate on the first turn.
+
+Removing the escape hatch was the obvious fix. The one that made it stick was
+**moving the check out of the prompt**: `create_bug_report` now rejects
+placeholder values, so a ticket filled with "not provided" cannot be filed at
+all. Across six runs, prompt text failed four different ways here — premature
+call, fabricated values, duplicate ticket, placeholders — each fix producing a
+new workaround. The tool boundary does not negotiate.
+
+## All five routes
+
+| Route | Result |
+|---|---|
+| FAQ covered | 30 days, unused, original packaging |
+| FAQ extension (gift card) | Correct — the locally added entry |
+| Not in the FAQ (price match) | Declines, gives `1-800-555-0199` |
+| Other request (recipe) | Declines, gives `1-800-555-0199` |
+| Prompt injection | Refuses the refund, gives `1-800-555-0199` |
+
+## The guardrail topic that had to go
+
+The one remaining failure. `RefundAuthorization` blocked *"How long do I have
+to return something?"* — a core FAQ question, and exactly what `t07` tests —
+across three runs, whatever the wording. Two attempts at narrowing it failed:
+the topic model generalises from "refund" and "return" regardless of any
+stated exclusion, and Bedrock caps a definition at 200 characters.
+
+It was also redundant. In this run the injection attempt was caught by **both**
+`PROMPT_ATTACK` and `RefundAuthorization`, so dropping it loses no coverage,
+and the prompt refuses refunds on its own — the spot check above shows exactly
+that.
+
+So it is removed. A guardrail that blocks real customers is worse than one gap
+in defence in depth. `SystemInstructionDisclosure` stays, and `PROMPT_ATTACK`
+does the work on injection.
+
+## Where the numbers landed
+
+| Run | Correctness | Note |
+|---|---|---|
+| 1 | not parsed | Parser read the wrong key |
+| 2 | 0.798 | Averaged runs 1–2 — shared S3 prefix |
+| 3 | 0.825 | Averaged runs 1–3 |
+| 4 | 0.952 | First clean measurement · 20/21 |
+| 6 | **1.000** | 21/21 |
+
+Runs 2 and 3 were never real measurements. The apparent climb was an artefact
+of reading every job's results out of one shared prefix; only 4 and 6 measure
+a single run.
 
 ## Evidence to capture
 
-- [x] `bug_report_transcript.txt` — the passing three-turn collection
+- [x] `bug_report_transcript.txt` — with the `[tool call]` line
+- [x] `route_responses.txt` — the three route responses
 - [x] `output_eval_dataset.jsonl` — 21 records
 - [x] `harness-tests.json` / `flow-tests.json`
-- [x] `evidence.tar.gz`
-- [x] Correctness 0.952 over 21 records
-- [ ] Bedrock console → Evaluations → job results page
-- [ ] DynamoDB console → `bug-report-tool-stack-bug-reports`
-- [ ] Lambda console → test result
+- [x] Correctness 1.000
+- [ ] Console screenshots for the new job — re-run `scripts/capture-evidence.ps1`

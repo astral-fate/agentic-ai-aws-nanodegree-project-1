@@ -6,7 +6,8 @@ IAM user, account 212626318772, us-east-1.
 
 | File | Shows | Rubric requirement |
 |---|---|---|
-| `01-bedrock-evaluations.png` | Bedrock → Evaluations: 4 jobs, all **Completed**, inference source `my-support-chatbot`, "Automatic: LLM as a judge" | Bedrock Evaluation job results |
+| `01-bedrock-evaluations.png` | Bedrock → Evaluations: 4 jobs, all **Completed**, inference source `my-support-chatbot`, "Automatic: LLM as a judge" | The evaluation job was created |
+| `01b-evaluation-job-results.png` | **Model evaluation report** for `support-chatbot-eval-1787438418`: **Correctness 0.95**, average **0.952** across 21 prompts, with the per-prompt histogram | **The Bedrock Evaluation job results page, and "correctness score close to 1"** |
 | `02-dynamodb-bug-reports.png` | `bug-report-tool-stack-bug-reports` → Explore items: **24 items**, every field (`ticketId`, `createdAt`, `description`, `environment`, `status`, `stepsToReproduce`), all `OPEN` | A record created in the DynamoDB table |
 | `03-lambda-create-bug-report.png` | Lambda → `bug-report-tool-stack-create-bug-report` | The tool implementation |
 | `04-lambda-cloudwatch-logs.png` | CloudWatch log group for the Lambda: **6 log streams** with event times | Real invocations through the gateway |

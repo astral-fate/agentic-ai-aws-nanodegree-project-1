@@ -273,3 +273,80 @@ def test_the_index_table_lists_every_screenshot():
 
     missing = [s for s in shots if s not in text]
     assert not missing, f"not listed in the index table: {missing}"
+
+
+# --- the real Bedrock Flow -------------------------------------------------
+
+
+def test_the_flow_canvas_is_captured_when_a_flow_exists(capture):
+    """The rubric asks for a flow diagram. setup_flow.py builds a real Flow,
+    and the console renders its node graph - so there is an actual canvas to
+    screenshot rather than only a hand-drawn one."""
+    cfg = dict(CONFIG, flow_id="FLOW123ABC")
+    targets = capture.build_targets("us-east-1", cfg, JOB)
+    flow = next((t for t in targets if "#/flows/" in t["url"]), None)
+
+    assert flow is not None, "no flow-canvas target"
+    assert "FLOW123ABC" in flow["url"]
+    assert flow["expect"] == "RouteByCategory", (
+        "should wait for a node name, so a half-rendered canvas is not saved"
+    )
+
+
+def test_no_flow_target_without_a_flow(capture):
+    targets = capture.build_targets("us-east-1", CONFIG, JOB)
+
+    assert not any("#/flows/" in t["url"] for t in targets)
+
+
+def test_the_flow_has_the_shape_the_rubric_describes():
+    """Input -> classifier Prompt -> Condition -> three branches, each ending
+    at its own Output node."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "setup_flow", REPO_ROOT / "project" / "starter" / "setup_flow.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+
+    d = m.build_definition("FAQ TEXT")
+    kinds = {}
+    for n in d["nodes"]:
+        kinds.setdefault(n["type"], []).append(n["name"])
+
+    assert len(kinds["Input"]) == 1
+    assert len(kinds["Condition"]) == 1, "one Condition node drives the routing"
+    assert len(kinds["Output"]) == 3, "each path needs its own Output node"
+    assert len(kinds["Prompt"]) == 4, "classifier plus one prompt per branch"
+
+    # Every Output is reached from a different branch.
+    to_output = {c["source"] for c in d["connections"]
+                 if c["target"] in kinds["Output"]}
+    assert len(to_output) == 3, "the three paths must be distinct"
+
+
+def test_the_condition_node_has_real_expressions():
+    """The rubric asks for the Condition node expressions specifically."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "setup_flow", REPO_ROOT / "project" / "starter" / "setup_flow.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+
+    d = m.build_definition("FAQ TEXT")
+    cond = next(n for n in d["nodes"] if n["type"] == "Condition")
+    conditions = cond["configuration"]["condition"]["conditions"]
+
+    named = {c["name"]: c.get("expression") for c in conditions}
+    assert named["IsBugReport"] == 'category == "BUG_REPORT"'
+    assert named["IsPlatformQuestion"] == 'category == "PLATFORM_QUESTION"'
+    assert "default" in named, "the else branch must exist"
+
+
+def test_the_flow_validates_before_it_creates_anything():
+    """A bad definition should fail with the API's own message, not leave a
+    broken flow behind."""
+    src = (REPO_ROOT / "project" / "starter" / "setup_flow.py").read_text(encoding="utf-8")
+
+    assert src.index("validate_flow_definition") < src.index("create_flow")

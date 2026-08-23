@@ -116,6 +116,22 @@ def build_targets(region: str, cfg: dict, job: dict) -> list[dict]:
         },
     ]
 
+    if cfg.get("flow_id"):
+        # The Flow canvas - the diagram the rubric asks for. Built by
+        # setup_flow.py; the console renders the node graph.
+        targets.insert(0, {
+            "name": "00-bedrock-flow-diagram",
+            "url": console(region,
+                           f"bedrock/home?region={region}#/flows/{cfg['flow_id']}"),
+            "note": "Bedrock Flows console — the flow diagram, showing the "
+                    "classifier, the Condition node and three paths each "
+                    "ending at its own Output node.",
+            "wait": 15000,
+            "expect": "RouteByCategory",
+            "attempts": 16,
+            "warm_url": console(region, f"bedrock/home?region={region}#/flows"),
+        })
+
     if job.get("jobName"):
         # The evaluations console keys off the job ARN. Included as a best
         # effort: if the fragment shape changes, the list page above still

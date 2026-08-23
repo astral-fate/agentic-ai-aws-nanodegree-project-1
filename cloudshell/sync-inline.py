@@ -48,6 +48,7 @@ INLINED = [
     "disable_memory.py",       # turn off cross-session recall
     "guardrail.py",            # the ApplyGuardrail pre-screen
     "setup_guardrail.py",      # creates the guardrail
+    "setup_flow.py",           # the Bedrock Flow the rubric asks to see
 ]
 
 EXECUTABLE = {".py", ".sh"}

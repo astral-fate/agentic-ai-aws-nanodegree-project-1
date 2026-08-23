@@ -147,3 +147,27 @@ def test_the_wrapper_warns_that_root_cannot_federate():
 
     assert ":root$" in ps1
     assert "Root cannot call GetFederationToken" in ps1
+
+
+def test_the_evaluation_report_page_is_a_target(capture):
+    """The reviewer asked for the Bedrock Evaluation job RESULTS page. The
+    evaluations LIST page is not that page - it shows job names and statuses,
+    not the correctness score."""
+    targets = capture.build_targets("us-east-1", CONFIG, JOB)
+    report = next((t for t in targets if "report" in t["url"]), None)
+
+    assert report is not None, "no evaluation report target"
+    assert f"job={JOB['jobName']}" in report["url"], (
+        "the report route is keyed by job NAME, not ARN"
+    )
+    assert report["expect"] == "Correctness", (
+        "must wait for the score to render, not just any content"
+    )
+
+
+def test_the_report_route_is_the_one_that_actually_works(capture):
+    """Found by clicking through from the list. Guessing produced blanks."""
+    targets = capture.build_targets("us-east-1", CONFIG, JOB)
+    report = next(t for t in targets if "report" in t["url"])
+
+    assert "#/eval/model-evaluation/report?job=" in report["url"]

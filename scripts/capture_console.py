@@ -116,18 +116,25 @@ def build_targets(region: str, cfg: dict, job: dict) -> list[dict]:
         },
     ]
 
-    if False and job.get("jobArn"):  # detail route shape unknown; list page suffices
+    if job.get("jobName"):
         # The evaluations console keys off the job ARN. Included as a best
         # effort: if the fragment shape changes, the list page above still
         # gives you a screenshot to work from.
+        # The report route, found by clicking through from the list:
+        #   #/eval/model-evaluation/report?job=<jobName>
+        # It is keyed by job NAME, not ARN. This is the page carrying the
+        # correctness score, so it is the single most important screenshot.
         targets.insert(1, {
-            "name": "01b-bedrock-evaluation-job",
+            "name": "01b-evaluation-job-results",
             "url": console(region,
                            f"bedrock/home?region={region}"
-                           f"#/evaluations/{quote(job['jobArn'], safe='')}"),
-            "note": f"Results page for {job.get('jobName', 'the job')}.",
-            "wait": 8000,
-            "optional": True,
+                           f"#/eval/model-evaluation/report?job={job['jobName']}"),
+            "note": f"Evaluation report for {job['jobName']} — the "
+                    "correctness score and per-prompt breakdown.",
+            "wait": 15000,
+            "expect": "Correctness",
+            "attempts": 16,
+            "warm_url": console(region, f"bedrock/home?region={region}#evaluation"),
         })
     return targets
 

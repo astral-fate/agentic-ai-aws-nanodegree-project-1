@@ -2202,7 +2202,7 @@ EVIDENCE="$PROJECT_DIR/evidence"
 rm -rf "$EVIDENCE"; mkdir -p "$EVIDENCE"
 
 for f in system_prompt.txt online_shop_faq.md harness-tests.json flow-tests.json \
-         output_eval_dataset.jsonl bug_report_transcript.txt \
+         output_eval_dataset.jsonl bug_report_transcript.txt route_responses.txt \
          agentcore_config.json eval_job.json; do
   [ -f "$f" ] && cp "$f" "$EVIDENCE/"
 done

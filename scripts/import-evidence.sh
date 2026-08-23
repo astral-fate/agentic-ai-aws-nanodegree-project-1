@@ -37,9 +37,15 @@ SHOTS="${2:-}"
 step "Locating the bundle"
 
 if [ -z "$BUNDLE" ]; then
-  for dir in "$HOME/Downloads" "$USERPROFILE/Downloads" "/c/Users/$USER/Downloads"; do
+  # Browsers and upload tools both rename files - a Claude upload arrives as
+  # "<hash>-evidence.tar.gz", Chrome adds " (1)" - so match anything with
+  # "evidence" in the name and take the newest.
+  for dir in "$HOME/Downloads" "$USERPROFILE/Downloads" \
+             "/c/Users/$USER/Downloads" "$HOME/Desktop" \
+             "$HOME/.claude/uploads" "$(pwd)"; do
     [ -d "$dir" ] || continue
-    found="$(ls -t "$dir"/evidence*.tar.gz 2>/dev/null | head -1 || true)"
+    found="$(find "$dir" -maxdepth 3 -iname '*evidence*.tar.gz' -newermt "-14 days" -printf '%T@ %p\n' 2>/dev/null \
+             | sort -rn | head -1 | cut -d" " -f2-)"
     if [ -n "$found" ]; then BUNDLE="$found"; break; fi
   done
 fi

@@ -20,6 +20,25 @@ below with the image or file right underneath it.
 > rather than on a diagram surface. Images 06–10 render that real content;
 > images 01–05 are genuine AWS console screenshots.
 
+## Every image, with its path
+
+| Image | Rubric item | Path |
+|---|---|---|
+| [**Full flow diagram**](run-02/screenshots/06-flow-diagram.png) | §1 · the whole flow, three distinct outputs | [`evidence/run-02/screenshots/06-flow-diagram.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/06-flow-diagram.png) |
+| [**Classifier prompt**](run-02/screenshots/07-classifier-prompt.png) | §1 · `STEP 1 - CLASSIFY`, verbatim | [`evidence/run-02/screenshots/07-classifier-prompt.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/07-classifier-prompt.png) |
+| [**Condition expressions**](run-02/screenshots/08-condition-expressions.png) | §1 · routing rules + near-miss pairs | [`evidence/run-02/screenshots/08-condition-expressions.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/08-condition-expressions.png) |
+| [**FAQ embedded in the prompt**](run-02/screenshots/09-faq-embedded-in-prompt.png) | §3 · `{{FAQ}}` before and after substitution | [`evidence/run-02/screenshots/09-faq-embedded-in-prompt.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/09-faq-embedded-in-prompt.png) |
+| [**Route responses**](run-02/screenshots/10-faq-and-handoff-responses.png) | §3 · covered · uncovered · other-request | [`evidence/run-02/screenshots/10-faq-and-handoff-responses.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/10-faq-and-handoff-responses.png) |
+| [**Evaluation report — Correctness 1.00**](run-02/screenshots/01b-evaluation-job-results.png) | §4 · the score, close to 1 | [`evidence/run-02/screenshots/01b-evaluation-job-results.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/01b-evaluation-job-results.png) |
+| [Bedrock Evaluations list](run-02/screenshots/01-bedrock-evaluations.png) | §4 · the job was created and Completed | [`evidence/run-02/screenshots/01-bedrock-evaluations.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/01-bedrock-evaluations.png) |
+| [DynamoDB bug reports](run-02/screenshots/02-dynamodb-bug-reports.png) | §2 · tickets the chatbot filed | [`evidence/run-02/screenshots/02-dynamodb-bug-reports.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/02-dynamodb-bug-reports.png) |
+| [Lambda `create_bug_report`](run-02/screenshots/03-lambda-create-bug-report.png) | the tool implementation | [`evidence/run-02/screenshots/03-lambda-create-bug-report.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/03-lambda-create-bug-report.png) |
+| [CloudWatch logs](run-02/screenshots/04-lambda-cloudwatch-logs.png) | real invocations through the gateway | [`evidence/run-02/screenshots/04-lambda-cloudwatch-logs.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/04-lambda-cloudwatch-logs.png) |
+| [CloudFormation stacks](run-02/screenshots/05-cloudformation-stacks.png) | deployed infrastructure | [`evidence/run-02/screenshots/05-cloudformation-stacks.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/05-cloudformation-stacks.png) |
+
+All eleven are embedded further down, each under the rubric line it
+answers. Click any image to open it full size.
+
 ---
 
 ## 1. Implement Classification and Routing
@@ -29,14 +48,18 @@ below with the image or file right underneath it.
 One classification step, three mutually exclusive paths, each terminating at
 its own distinct output.
 
-![Full flow diagram](run-02/screenshots/06-flow-diagram.png)
+[![Full flow diagram](run-02/screenshots/06-flow-diagram.png)](run-02/screenshots/06-flow-diagram.png)
+
+<sub>🔍 [Open full size](run-02/screenshots/06-flow-diagram.png) &nbsp;·&nbsp; path: [`evidence/run-02/screenshots/06-flow-diagram.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/06-flow-diagram.png)</sub>
 
 ### Screenshot of the classifier prompt configuration
 
 The `STEP 1 - CLASSIFY` block, quoted verbatim from `system_prompt.txt`. It
 runs before any reply is written and must select exactly one category.
 
-![Classifier prompt](run-02/screenshots/07-classifier-prompt.png)
+[![Classifier prompt](run-02/screenshots/07-classifier-prompt.png)](run-02/screenshots/07-classifier-prompt.png)
+
+<sub>🔍 [Open full size](run-02/screenshots/07-classifier-prompt.png) &nbsp;·&nbsp; path: [`evidence/run-02/screenshots/07-classifier-prompt.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/07-classifier-prompt.png)</sub>
 
 ### Screenshot of the Condition node expressions
 
@@ -44,7 +67,9 @@ The routing rules. The worked near-miss pairs are the load-bearing part —
 both sides mention something going wrong, and the rule is whether the FAQ has
 an answer or the software is genuinely broken.
 
-![Condition expressions](run-02/screenshots/08-condition-expressions.png)
+[![Condition expressions](run-02/screenshots/08-condition-expressions.png)](run-02/screenshots/08-condition-expressions.png)
+
+<sub>🔍 [Open full size](run-02/screenshots/08-condition-expressions.png) &nbsp;·&nbsp; path: [`evidence/run-02/screenshots/08-condition-expressions.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/08-condition-expressions.png)</sub>
 
 ---
 
@@ -81,7 +106,9 @@ single tool call and the ticket ID relayed.
 
 ### DynamoDB table showing an item created by the chatbot
 
-![DynamoDB bug reports](run-02/screenshots/02-dynamodb-bug-reports.png)
+[![DynamoDB bug reports](run-02/screenshots/02-dynamodb-bug-reports.png)](run-02/screenshots/02-dynamodb-bug-reports.png)
+
+<sub>🔍 [Open full size](run-02/screenshots/02-dynamodb-bug-reports.png) &nbsp;·&nbsp; path: [`evidence/run-02/screenshots/02-dynamodb-bug-reports.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/02-dynamodb-bug-reports.png)</sub>
 
 The stored item for the conversation above:
 
@@ -103,7 +130,9 @@ status           : OPEN
 `create_harness.py` replaces `{{FAQ}}` with `online_shop_faq.md` at upload
 time, so the model sees the whole FAQ at inference.
 
-![FAQ embedded in the prompt](run-02/screenshots/09-faq-embedded-in-prompt.png)
+[![FAQ embedded in the prompt](run-02/screenshots/09-faq-embedded-in-prompt.png)](run-02/screenshots/09-faq-embedded-in-prompt.png)
+
+<sub>🔍 [Open full size](run-02/screenshots/09-faq-embedded-in-prompt.png) &nbsp;·&nbsp; path: [`evidence/run-02/screenshots/09-faq-embedded-in-prompt.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/09-faq-embedded-in-prompt.png)</sub>
 
 Full substituted prompt:
 [`run-02/rendered_system_prompt.txt`](run-02/rendered_system_prompt.txt)
@@ -114,7 +143,9 @@ Full substituted prompt:
 The chatbot's actual replies, recorded during the evaluation run. All three
 scored 1.0.
 
-![Route responses](run-02/screenshots/10-faq-and-handoff-responses.png)
+[![Route responses](run-02/screenshots/10-faq-and-handoff-responses.png)](run-02/screenshots/10-faq-and-handoff-responses.png)
+
+<sub>🔍 [Open full size](run-02/screenshots/10-faq-and-handoff-responses.png) &nbsp;·&nbsp; path: [`evidence/run-02/screenshots/10-faq-and-handoff-responses.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/10-faq-and-handoff-responses.png)</sub>
 
 ---
 
@@ -136,11 +167,15 @@ records, no harness errors.
 
 **Correctness 1.00** — average 1.000 across all 21 prompts.
 
-![Bedrock evaluation report](run-02/screenshots/01b-evaluation-job-results.png)
+[![Bedrock evaluation report](run-02/screenshots/01b-evaluation-job-results.png)](run-02/screenshots/01b-evaluation-job-results.png)
+
+<sub>🔍 [Open full size](run-02/screenshots/01b-evaluation-job-results.png) &nbsp;·&nbsp; path: [`evidence/run-02/screenshots/01b-evaluation-job-results.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/01b-evaluation-job-results.png)</sub>
 
 The jobs list, showing the job was created and Completed:
 
-![Bedrock evaluations list](run-02/screenshots/01-bedrock-evaluations.png)
+[![Bedrock evaluations list](run-02/screenshots/01-bedrock-evaluations.png)](run-02/screenshots/01-bedrock-evaluations.png)
+
+<sub>🔍 [Open full size](run-02/screenshots/01-bedrock-evaluations.png) &nbsp;·&nbsp; path: [`evidence/run-02/screenshots/01-bedrock-evaluations.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/01-bedrock-evaluations.png)</sub>
 
 ### Written observations
 
@@ -153,15 +188,21 @@ each one surfaced, and what fixed them.
 
 The `create_bug_report` Lambda:
 
-![Lambda function](run-02/screenshots/03-lambda-create-bug-report.png)
+[![Lambda function](run-02/screenshots/03-lambda-create-bug-report.png)](run-02/screenshots/03-lambda-create-bug-report.png)
+
+<sub>🔍 [Open full size](run-02/screenshots/03-lambda-create-bug-report.png) &nbsp;·&nbsp; path: [`evidence/run-02/screenshots/03-lambda-create-bug-report.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/03-lambda-create-bug-report.png)</sub>
 
 Its CloudWatch log group — real invocations from the chatbot:
 
-![CloudWatch logs](run-02/screenshots/04-lambda-cloudwatch-logs.png)
+[![CloudWatch logs](run-02/screenshots/04-lambda-cloudwatch-logs.png)](run-02/screenshots/04-lambda-cloudwatch-logs.png)
+
+<sub>🔍 [Open full size](run-02/screenshots/04-lambda-cloudwatch-logs.png) &nbsp;·&nbsp; path: [`evidence/run-02/screenshots/04-lambda-cloudwatch-logs.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/04-lambda-cloudwatch-logs.png)</sub>
 
 Both CloudFormation stacks:
 
-![CloudFormation stacks](run-02/screenshots/05-cloudformation-stacks.png)
+[![CloudFormation stacks](run-02/screenshots/05-cloudformation-stacks.png)](run-02/screenshots/05-cloudformation-stacks.png)
+
+<sub>🔍 [Open full size](run-02/screenshots/05-cloudformation-stacks.png) &nbsp;·&nbsp; path: [`evidence/run-02/screenshots/05-cloudformation-stacks.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/05-cloudformation-stacks.png)</sub>
 
 **On the Lambda Test tab.** The rubric asks for a console *test invocation*
 result. That needs a human to click **Test**, and automating the click would

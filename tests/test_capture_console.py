@@ -228,3 +228,48 @@ def test_rendered_images_are_not_dressed_up_as_the_console():
     assert "None of them imitate the AWS console" in source
     # Each page must name the file it was rendered from.
     assert "class='src'" in source or 'class="src"' in source
+
+
+def _links(md_rel: str) -> list[tuple[str, str]]:
+    import re
+    return re.findall(r"\[([^\]]*)\]\(([^)]+)\)",
+                      (REPO_ROOT / md_rel).read_text(encoding="utf-8"))
+
+
+@pytest.mark.parametrize("md_rel", ["README.md", "evidence/README.md",
+                                    "SUBMISSION.md"])
+def test_no_broken_relative_links(md_rel):
+    """A dead link in the evidence index sends the reviewer to a 404, which
+    reads exactly like the artefact is missing."""
+    base = (REPO_ROOT / md_rel).parent
+    broken = [
+        target for _, target in _links(md_rel)
+        if not target.startswith(("http://", "https://", "#", "mailto:"))
+        and not (base / target).exists()
+    ]
+
+    assert not broken, f"{md_rel} links to missing files: {broken}"
+
+
+def test_every_image_is_clickable(md_rel="evidence/README.md"):
+    """Embedded as [![alt](p)](p) so clicking opens it full size - the
+    inline render is downscaled and the prompt text is unreadable at that
+    size."""
+    import re
+
+    text = (REPO_ROOT / md_rel).read_text(encoding="utf-8")
+    plain = re.findall(r"(?<!\[)!\[([^\]]*)\]\(([^)]+)\)(?!\])", text)
+
+    assert not plain, f"these images are not wrapped in a link: {plain}"
+
+
+def test_the_index_table_lists_every_screenshot():
+    """One place with every path, so nothing has to be hunted for."""
+    text = (REPO_ROOT / "evidence" / "README.md").read_text(encoding="utf-8")
+    shots = sorted(
+        p.name for p in
+        (REPO_ROOT / "evidence" / "run-02" / "screenshots").glob("*.png")
+    )
+
+    missing = [s for s in shots if s not in text]
+    assert not missing, f"not listed in the index table: {missing}"

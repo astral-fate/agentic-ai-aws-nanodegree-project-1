@@ -74,15 +74,21 @@ Bedrock Flows, so the routing lives in `system_prompt.txt` rather than on a
 console canvas — the Project Overview says outright that there are no
 condition nodes or separate classifiers.
 
-![Full flow diagram](evidence/run-02/screenshots/06-flow-diagram.png)
+[![Full flow diagram](evidence/run-02/screenshots/06-flow-diagram.png)](evidence/run-02/screenshots/06-flow-diagram.png)
+
+<sub>🔍 [Open full size](evidence/run-02/screenshots/06-flow-diagram.png) &nbsp;·&nbsp; path: [`evidence/run-02/screenshots/06-flow-diagram.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/06-flow-diagram.png)</sub>
 
 ### Bedrock Evaluations — correctness 1.00
 
-![Bedrock evaluation report](evidence/run-02/screenshots/01b-evaluation-job-results.png)
+[![Bedrock evaluation report](evidence/run-02/screenshots/01b-evaluation-job-results.png)](evidence/run-02/screenshots/01b-evaluation-job-results.png)
+
+<sub>🔍 [Open full size](evidence/run-02/screenshots/01b-evaluation-job-results.png) &nbsp;·&nbsp; path: [`evidence/run-02/screenshots/01b-evaluation-job-results.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/01b-evaluation-job-results.png)</sub>
 
 ### Tickets the chatbot filed
 
-![DynamoDB bug reports](evidence/run-02/screenshots/02-dynamodb-bug-reports.png)
+[![DynamoDB bug reports](evidence/run-02/screenshots/02-dynamodb-bug-reports.png)](evidence/run-02/screenshots/02-dynamodb-bug-reports.png)
+
+<sub>🔍 [Open full size](evidence/run-02/screenshots/02-dynamodb-bug-reports.png) &nbsp;·&nbsp; path: [`evidence/run-02/screenshots/02-dynamodb-bug-reports.png`](https://github.com/astral-fate/agentic-ai-aws-nanodegree-project-1/blob/main/evidence/run-02/screenshots/02-dynamodb-bug-reports.png)</sub>
 
 ### The classifier, the routing rules, and the embedded FAQ
 

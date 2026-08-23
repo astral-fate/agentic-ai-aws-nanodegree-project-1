@@ -341,7 +341,6 @@ def test_memory_is_scoped_before_any_test_runs(script):
 PASTES = [
     ("cloudshell/PASTE-THIS.txt", "cloudshell/run-all.sh"),
     ("cloudshell/PASTE-CREATE-USER.txt", "cloudshell/create-evidence-user.sh"),
-    ("cloudshell/PASTE-CREATE-FLOW.txt", "cloudshell/create-flow.sh"),
 ]
 
 
@@ -403,18 +402,41 @@ def test_the_user_script_can_clean_up_after_itself(request):
     assert "history -c" in src, "should tell the user to wipe the printed secret"
 
 
-def test_the_flow_script_carries_the_real_setup_flow(request):
-    """create-flow.sh embeds setup_flow.py so it is one paste. If the two
-    drift, CloudShell builds a different flow than the repo describes."""
-    embedded = _heredoc(
-        (request.config.rootpath / "cloudshell" / "create-flow.sh").read_text(encoding="utf-8"),
-        "SETUP_FLOW_PY",
+
+
+@pytest.mark.parametrize("script_rel", [
+    "cloudshell/run-all.sh",
+    "cloudshell/create-evidence-user.sh",
+    "cloudshell/regenerate-paste.sh",
+])
+def test_scripts_still_have_line_breaks(request, script_rel):
+    """A generator patching this repo once produced `tr -d '<newline>'` from
+    an eaten backslash-r, which stripped every line break out of run-all.sh
+    and create-evidence-user.sh - and the collapsed files were committed and
+    pushed. bash -n still passed, so only the line count catches it."""
+    raw = (request.config.rootpath / script_rel).read_bytes()
+
+    assert raw.count(b"\n") > 20, (
+        f"{script_rel} has {raw.count(chr(10).encode())} newlines - it has "
+        "been collapsed onto one line"
     )
-    real = (request.config.rootpath / "project" / "starter" / "setup_flow.py").read_text(
+
+
+def test_the_paste_generator_refuses_a_collapsed_script(request):
+    """The generator now guards against re-encoding a collapsed script."""
+    src = (request.config.rootpath / "cloudshell" / "regenerate-paste.sh").read_text(
         encoding="utf-8"
     )
 
-    assert embedded is not None, "no SETUP_FLOW_PY heredoc"
-    assert embedded.strip() == real.strip(), (
-        "cloudshell/create-flow.sh embeds a stale setup_flow.py"
+    assert "refusing to encode it" in src
+
+    # Built with chr() rather than written as an escape. Every attempt to
+    # write this needle literally has been mangled by one layer or another,
+    # which is precisely the bug being guarded against.
+    octal_cr = chr(92) + "015"
+    literal_cr = chr(92) + "r"
+
+    assert octal_cr in src, "CR stripping must use the octal escape"
+    assert ("tr -d " + chr(39) + literal_cr + chr(39)) not in src, (
+        "a literal backslash-r is what got eaten and became tr -d <newline>"
     )
